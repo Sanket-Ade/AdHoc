@@ -12,16 +12,16 @@ export const Footer = () => {
               <div className="w-8 h-8 rounded-xl bg-yellow-300 border border-yellow-400 flex items-center justify-center text-zinc-950 font-black text-base">
                 ad
               </div>
-              <span className="text-lg font-black text-zinc-900 tracking-tight">
+              <span className="text-xl font-black text-zinc-900 tracking-tight">
                 adhoc<span className="text-amber-500">.</span>
               </span>
             </Link>
-            <p className="text-xs text-zinc-500 max-w-sm leading-relaxed">
+            <p className="text-sm text-zinc-600 max-w-sm leading-relaxed">
               Verified commercial advertising production directory for brand teams and agencies.
             </p>
             <div className="flex items-center gap-2 pt-1">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600"/>
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                <ShieldCheck className="w-4 h-4 text-emerald-600"/>
                 100% Verified Studios
               </span>
             </div>
@@ -29,23 +29,18 @@ export const Footer = () => {
 
           {/* Categories Column */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-900 mb-3.5">
               Capabilities
             </h4>
-            <ul className="space-y-2 text-xs text-zinc-600">
+            <ul className="space-y-2.5 text-sm text-zinc-600">
               <li>
                 <Link href="/explore?category=Video+Production" className="hover:text-zinc-900 transition-colors">
-                  Commercial Film & TVC
+                  Commercial Film & Video Production
                 </Link>
               </li>
               <li>
-                <Link href="/explore?category=Digital+Advertising" className="hover:text-zinc-900 transition-colors">
-                  Digital Advertising & Motion
-                </Link>
-              </li>
-              <li>
-                <Link href="/explore?category=Outdoor+Advertising" className="hover:text-zinc-900 transition-colors">
-                  DOOH & Transit Billboards
+                <Link href="/explore?category=Digital+Advertisement" className="hover:text-zinc-900 transition-colors">
+                  Digital Advertisement & Motion
                 </Link>
               </li>
             </ul>
@@ -53,19 +48,19 @@ export const Footer = () => {
 
           {/* Platform Column */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-900 mb-3.5">
               Platform
             </h4>
-            <ul className="space-y-2 text-xs text-zinc-600">
+            <ul className="space-y-2.5 text-sm text-zinc-600">
               <li>
                 <Link href="/explore" className="hover:text-zinc-900 transition-colors">
                   Studio Directory
                 </Link>
               </li>
               <li>
-                <Link href="/ai-assistant" className="hover:text-zinc-900 transition-colors flex items-center gap-1">
+                <Link href="/ai-assistant" className="hover:text-zinc-900 transition-colors flex items-center gap-1.5">
                   <span>AI Brief Assistant</span>
-                  <Sparkles className="w-3 h-3 text-amber-600"/>
+                  <Sparkles className="w-3.5 h-3.5 text-amber-600"/>
                 </Link>
               </li>
               <li>
@@ -88,20 +83,20 @@ export const Footer = () => {
 
           {/* Contact Column */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-900 mb-3">
+            <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-900 mb-3.5">
               Contact
             </h4>
-            <ul className="space-y-2.5 text-xs text-zinc-600">
+            <ul className="space-y-2.5 text-sm text-zinc-600">
               <li className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-amber-600 shrink-0"/>
+                <Mail className="w-4 h-4 text-amber-600 shrink-0"/>
                 <span>support@adhoc.creative</span>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-amber-600 shrink-0"/>
+                <Phone className="w-4 h-4 text-amber-600 shrink-0"/>
                 <span>+91 22 8900 1234</span>
               </li>
               <li className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5"/>
+                <MapPin className="w-4 h-4 text-amber-600 shrink-0 mt-0.5"/>
                 <span>Bandra West, Mumbai</span>
               </li>
             </ul>
@@ -109,7 +104,7 @@ export const Footer = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-zinc-500">
+        <div className="pt-6 border-t border-zinc-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm text-zinc-500">
           <p>© 2026 Adhoc Marketplace Inc. All rights reserved.</p>
           <div className="flex gap-4">
             <a href="#" className="hover:text-zinc-900 transition-colors">Privacy</a>

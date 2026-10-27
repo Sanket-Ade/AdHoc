@@ -6,13 +6,13 @@ import { Footer } from '@/components/Footer';
 import { FloatingAIAssistant } from '@/components/FloatingAIAssistant';
 export const metadata = {
     title: 'Adhoc | Advertising Production Houses Marketplace',
-    description: 'Connect with verified advertising production houses for video production, digital advertising, and outdoor advertising.',
+    description: 'Connect with verified advertising production houses for video production and digital advertisement.',
     keywords: [
         'advertising production house',
         'commercial film production',
+        'video production',
+        'digital advertisement',
         'digital advertising',
-        'outdoor advertising',
-        'billboard advertising',
     ],
 };
 export default function RootLayout({ children, }) {

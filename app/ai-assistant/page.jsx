@@ -20,11 +20,11 @@ const INITIAL_MESSAGES = [
         timestamp: 'Just now',
         quickReplies: [
             '30s TV / OTT Commercial Film',
-            'Artisan Product Packaging & Print',
-            'Brand Identity Overhaul',
-            '3D Billboard / CGI Animation',
             'Performance Social Video Ads',
-            'Fashion / Editorial Shoot',
+            'Brand Narrative Digital Film',
+            'Omnichannel Digital Ad Creative',
+            'High-Speed Commercial Video',
+            'Social Video Creative Engine',
         ],
     },
 ];
@@ -62,20 +62,10 @@ export default function AIAssistantPage() {
             let botResponse;
             if (step === 1) {
                 let detectedCategory = 'Video Production';
-                if (text.toLowerCase().includes('print') || text.toLowerCase().includes('packaging')) {
-                    detectedCategory = 'Printing';
-                }
-                else if (text.toLowerCase().includes('brand') || text.toLowerCase().includes('identity')) {
-                    detectedCategory = 'Branding';
-                }
-                else if (text.toLowerCase().includes('billboard') || text.toLowerCase().includes('cgi') || text.toLowerCase().includes('3d')) {
-                    detectedCategory = '3D & CGI Animation';
-                }
-                else if (text.toLowerCase().includes('photo') || text.toLowerCase().includes('editorial')) {
-                    detectedCategory = 'Photography';
-                }
-                else if (text.toLowerCase().includes('social') || text.toLowerCase().includes('performance')) {
-                    detectedCategory = 'Digital Advertising';
+                if (text.toLowerCase().includes('digital') || text.toLowerCase().includes('social') || text.toLowerCase().includes('performance') || text.toLowerCase().includes('ad') || text.toLowerCase().includes('motion')) {
+                    detectedCategory = 'Digital Advertisement';
+                } else {
+                    detectedCategory = 'Video Production';
                 }
                 setBriefState((prev) => ({
                     ...prev,
@@ -108,8 +98,8 @@ export default function AIAssistantPage() {
                     content: "Specify your planned production budget tier:",
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     quickReplies: [
-                        'Under ₹2,00,000 (Social & Collateral)',
-                        '₹2,00,000 – ₹8,00,000 (Print & Mid-Tier Shoot)',
+                        'Under ₹2,00,000 (Social & Digital Ads)',
+                        '₹2,00,000 – ₹8,00,000 (Digital Video & Mid-Tier Shoot)',
                         '₹8,00,000 – ₹25,00,000 (Commercial Film / OTT)',
                         '₹25,00,000+ (High-Impact Broadcast TVC)',
                     ],

@@ -150,10 +150,10 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
                 Estimated Budget Range
               </label>
               <select value={budgetRange} onChange={(e) => setBudgetRange(e.target.value)} className="w-full bg-white text-zinc-900 text-sm rounded-xl border border-zinc-200 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 px-3.5 py-2.5 outline-none cursor-pointer">
-                <option value="Under ₹1,00,000" className="bg-white text-zinc-900">Under ₹1,00,000 (Social / Collateral)</option>
-                <option value="₹1,00,000 - ₹5,00,000" className="bg-white text-zinc-900">₹1,00,000 - ₹5,00,000 (Mid-tier Shoot / Packaging)</option>
+                <option value="Under ₹1,00,000" className="bg-white text-zinc-900">Under ₹1,00,000 (Social / Digital Ads)</option>
+                <option value="₹1,00,000 - ₹5,00,000" className="bg-white text-zinc-900">₹1,00,000 - ₹5,00,000 (Mid-tier Shoot / Digital Video)</option>
                 <option value="₹5,00,000 - ₹15,00,000" className="bg-white text-zinc-900">₹5,00,000 - ₹15,00,000 (Digital Ad Film / Brand)</option>
-                <option value="₹15,00,000 - ₹35,00,000" className="bg-white text-zinc-900">₹15,00,000 - ₹35,00,000 (Broadcast TVC / High OOH)</option>
+                <option value="₹15,00,000 - ₹35,00,000" className="bg-white text-zinc-900">₹15,00,000 - ₹35,00,000 (Broadcast TVC / Digital Campaign)</option>
                 <option value="₹35,00,000 - ₹75,00,000" className="bg-white text-zinc-900">₹35,00,000 - ₹75,00,000 (National Campaign)</option>
                 <option value="₹75,00,000+" className="bg-white text-zinc-900">₹75,00,000+ (Multi-City Rollout)</option>
               </select>
