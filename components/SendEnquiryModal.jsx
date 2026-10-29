@@ -5,7 +5,8 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { useAuth } from '@/context/AuthContext';
 import { POPULAR_CATEGORIES } from '@/lib/mock-data';
-import { Send, CheckCircle2, Clock } from 'lucide-react';
+import { Send, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
+import { EnquiryChatModal } from './EnquiryChatModal';
 import Link from 'next/link';
 export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCategory, initialTitle = '', initialDescription = '', initialBudget = '₹5,00,000 - ₹15,00,000', }) => {
     const { user, addEnquiry } = useAuth();
@@ -20,6 +21,7 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
     const [companyName, setCompanyName] = useState(user?.companyName || '');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [submittedEnquiryId, setSubmittedEnquiryId] = useState(null);
+    const [isChatOpen, setIsChatOpen] = useState(false);
     // Sync state when props change
     React.useEffect(() => {
         if (initialTitle)
@@ -72,7 +74,8 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
     };
     if (!productionHouse)
         return null;
-    return (<Modal isOpen={isOpen} onClose={handleResetAndClose} maxWidth="2xl" title={submittedEnquiryId ? undefined : `Send Enquiry to ${productionHouse.name}`} description={submittedEnquiryId
+    return (<>
+      <Modal isOpen={isOpen} onClose={handleResetAndClose} maxWidth="2xl" title={submittedEnquiryId ? undefined : `Send Enquiry to ${productionHouse.name}`} description={submittedEnquiryId
             ? undefined
             : 'Share your advertising requirements to receive a structured quote and timeline proposal.'}>
       {submittedEnquiryId ? (<div className="py-6 flex flex-col items-center text-center">
@@ -108,15 +111,20 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 w-full">
+          <div className="flex flex-col sm:flex-row gap-2.5 w-full">
+            <Button
+              variant="primary"
+              className="flex-1 font-bold text-sm"
+              leftIcon={<MessageSquare className="w-4 h-4" />}
+              onClick={() => setIsChatOpen(true)}
+            >
+              Message {productionHouse.name}
+            </Button>
             <Link href="/dashboard/customer" className="flex-1">
-              <Button variant="primary" className="w-full" onClick={handleResetAndClose}>
-                Track in Customer Dashboard
+              <Button variant="outline" className="w-full text-sm font-semibold" onClick={handleResetAndClose}>
+                Track in Dashboard
               </Button>
             </Link>
-            <Button variant="outline" onClick={handleResetAndClose}>
-              Done
-            </Button>
           </div>
         </div>) : (<form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Production House Summary Box */}
@@ -190,5 +198,16 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
             </Button>
           </div>
         </form>)}
-    </Modal>);
+    </Modal>
+    {isChatOpen && submittedEnquiryId && (
+      <EnquiryChatModal
+        isOpen={isChatOpen}
+        onClose={() => {
+          setIsChatOpen(false);
+          handleResetAndClose();
+        }}
+        enquiryId={submittedEnquiryId}
+      />
+    )}
+    </>);
 };

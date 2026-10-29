@@ -1,21 +1,60 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { EnquiryStatusBadge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { Modal } from '@/components/ui/Modal';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
+import { EnquiryChatModal } from '@/components/EnquiryChatModal';
 import { formatINR } from '@/lib/format';
-import { Heart, Sparkles, FileText, Calendar, MapPin, PlayCircle, CheckCircle2 } from 'lucide-react';
+import { Heart, Sparkles, FileText, Calendar, MapPin, PlayCircle, CheckCircle2, MessageSquare, ArrowRight, Trash2, AlertTriangle, LogIn } from 'lucide-react';
 
 export default function CustomerDashboardPage() {
     const router = useRouter();
-    const { user, enquiries, savedHouseIds, productionHouses, toggleSaveHouse } = useAuth();
+    const { user, role, isAuthenticated, isLoadingAuth, enquiries, savedHouseIds, productionHouses, toggleSaveHouse, deleteEnquiry } = useAuth();
     const [activeTab, setActiveTab] = useState('enquiries');
     const [enquiryModalHouse, setEnquiryModalHouse] = useState(null);
-    const customerEnquiries = enquiries.filter((e) => !user || e.customerId === user.id || e.customerEmail === user.email || e.customerId === 'cust-1');
+    const [activeChatEnquiryId, setActiveChatEnquiryId] = useState(null);
+    const [deletingEnquiry, setDeletingEnquiry] = useState(null);
+
+    // Route Protection: Business must be logged in
+    useEffect(() => {
+        if (!isLoadingAuth) {
+            if (!user) {
+                router.replace('/login?role=customer');
+            } else if (user.role === 'production_house') {
+                router.replace('/dashboard/production-house');
+            }
+        }
+    }, [user, isLoadingAuth, router]);
+
+    if (isLoadingAuth || !user || user.role !== 'customer') {
+        return (
+            <div className="min-h-screen bg-[#FAFAFA] flex flex-col items-center justify-center p-4">
+                <div className="w-12 h-12 rounded-2xl bg-yellow-300 border border-yellow-400 flex items-center justify-center text-zinc-950 font-black text-xl animate-pulse shadow-xs mb-4">
+                    ad
+                </div>
+                <h3 className="text-base font-bold text-zinc-900 mb-1">
+                    {isLoadingAuth ? 'Checking authentication...' : 'Redirecting to login...'}
+                </h3>
+                <p className="text-xs text-zinc-500 mb-4">
+                    Business accounts must be signed in to access the client dashboard.
+                </p>
+                {!isLoadingAuth && !user && (
+                    <Link href="/login?role=customer">
+                        <Button variant="primary" size="sm" leftIcon={<LogIn className="w-4 h-4" />}>
+                            Go to Business Login
+                        </Button>
+                    </Link>
+                )}
+            </div>
+        );
+    }
+
+    const customerEnquiries = enquiries.filter((e) => e.customerId === user.id || e.customerEmail === user.email || (user.id === 'cust-1' && e.customerId === 'cust-1'));
     const savedHouses = productionHouses.filter((h) => savedHouseIds.includes(h.id));
     const activeProjects = customerEnquiries.filter((e) => e.status === 'in_progress');
     const completedProjects = customerEnquiries.filter((e) => e.status === 'completed');
@@ -34,9 +73,7 @@ export default function CustomerDashboardPage() {
                 <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-zinc-900">
                   {user?.name || 'Sarah Chen'}
                 </h1>
-                <span className="text-xs sm:text-sm font-bold px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                  Verified Client
-                </span>
+              
               </div>
               <p className="text-sm sm:text-base text-zinc-500 font-medium">
                 {user?.companyName || 'Aurora Consumer Goods India'}
@@ -45,11 +82,7 @@ export default function CustomerDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Link href="/ai-assistant">
-              <Button variant="primary" size="md" leftIcon={<Sparkles className="w-4 h-4"/>} className="text-sm font-bold shadow-xs">
-                AI Brief Builder
-              </Button>
-            </Link>
+            
             <Link href="/explore">
               <Button variant="outline" size="md" className="text-sm font-semibold">
                 Explore Studios
@@ -105,6 +138,7 @@ export default function CustomerDashboardPage() {
         <div className="flex items-center gap-2 border-b border-zinc-200 pb-3 overflow-x-auto">
           {[
             { id: 'enquiries', label: 'Enquiries', count: customerEnquiries.length },
+            { id: 'messages', label: 'Studio Messages', count: customerEnquiries.filter(e => (e.messages?.length || 0) > 0).length },
             { id: 'saved', label: 'Saved Studios', count: savedHouses.length },
             { id: 'projects', label: 'Active Projects', count: activeProjects.length + completedProjects.length },
           ].map((tab) => {
@@ -202,10 +236,11 @@ export default function CustomerDashboardPage() {
                   </p>
 
                   {enq.quoteNotes && (
-                    <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-sm sm:text-base text-emerald-950 flex flex-wrap items-center justify-between gap-2 font-medium">
+                    <div className="p-3.5 bg-emerald-50 rounded-xl border border-emerald-100 text-sm sm:text-base text-emerald-950 flex flex-wrap items-center justify-between gap-2 font-medium">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-emerald-800">Proposal Notes:</span>
-                        <span className="text-sm sm:text-base text-emerald-900">{enq.quoteNotes}</span>
+                        <span className="  font-bold text-emerald-800">Proposal Notes:</span>
+                        <span className="text-[12px] sm:text-base text-emerald-900">{enq.quoteNotes}</span>
+
                       </div>
                     </div>
                   )}
@@ -227,14 +262,104 @@ export default function CustomerDashboardPage() {
                       )}
                     </div>
 
-                    <Link href={`/production-houses/${enq.productionHouseId}`}>
-                      <Button variant="outline" size="md" className="text-sm font-semibold py-2">
-                        View Studio
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      <Button
+                        variant="primary"
+                        size="md"
+                        onClick={() => setActiveChatEnquiryId(enq.id)}
+                        leftIcon={<MessageSquare className="w-4 h-4" />}
+                        className="text-sm font-bold py-2 shadow-xs cursor-pointer"
+                      >
+                        Chat with Studio {(enq.messages?.length || 0) > 1 ? `(${enq.messages.length})` : ''}
                       </Button>
-                    </Link>
+                      <Link href={`/production-houses/${enq.productionHouseId}`}>
+                        <Button variant="outline" size="md" className="text-sm font-semibold py-2">
+                          View Studio
+                        </Button>
+                      </Link>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingEnquiry(enq)}
+                        className="p-2 rounded-xl text-zinc-400 hover:text-rose-600 hover:bg-rose-50 border border-zinc-200 transition-colors cursor-pointer"
+                        title="Delete enquiry"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {/* 1.5 STUDIO MESSAGES & DISCUSSIONS TAB */}
+        {activeTab === 'messages' && (
+          <div className="space-y-4">
+            {customerEnquiries.filter((e) => (e.messages?.length || 0) > 0).length === 0 ? (
+              <EmptyState
+                icon={MessageSquare}
+                title="No Active Conversations"
+                description="Once you send an enquiry to a production house, direct messages with the studio will appear here."
+                actionText="Explore Studios"
+                onAction={() => router.push('/explore')}
+              />
+            ) : (
+              customerEnquiries
+                .filter((e) => (e.messages?.length || 0) > 0)
+                .map((enq) => {
+                  const lastMsg = enq.messages[enq.messages.length - 1];
+                  const studioMatch = productionHouses.find((h) => h.id === enq.productionHouseId);
+
+                  return (
+                    <div
+                      key={enq.id}
+                      onClick={() => setActiveChatEnquiryId(enq.id)}
+                      className="bg-white rounded-2xl p-5 sm:p-6 border border-zinc-200/90 shadow-soft hover:border-zinc-300 hover:shadow-md transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+                    >
+                      <div className="flex items-start sm:items-center gap-4">
+                        <img
+                          src={studioMatch?.logoUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80'}
+                          alt={enq.productionHouseName}
+                          className="w-14 h-14 rounded-2xl object-cover border border-zinc-200 bg-zinc-50 shrink-0"
+                        />
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="text-base sm:text-lg font-bold text-zinc-900 group-hover:text-amber-800 transition-colors">
+                              {enq.productionHouseName}
+                            </h4>
+                            <span className="text-xs bg-amber-50 text-amber-900 font-semibold px-2.5 py-0.5 rounded-full border border-amber-200/60">
+                              {enq.projectTitle}
+                            </span>
+                            <EnquiryStatusBadge status={enq.status} />
+                          </div>
+                          <p className="text-sm text-zinc-600 line-clamp-1">
+                            <strong className="text-zinc-800 font-medium">{lastMsg?.senderName}:</strong>{' '}
+                            {lastMsg?.content}
+                          </p>
+                          <span className="text-[11px] text-zinc-400 font-medium block">
+                            {lastMsg?.timestamp ? new Date(lastMsg.timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          leftIcon={<MessageSquare className="w-4 h-4" />}
+                          className="text-xs font-bold"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveChatEnquiryId(enq.id);
+                          }}
+                        >
+                          Open Chat ({enq.messages.length})
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })
             )}
           </div>
         )}
@@ -344,7 +469,58 @@ export default function CustomerDashboardPage() {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modals */}
       <SendEnquiryModal isOpen={Boolean(enquiryModalHouse)} onClose={() => setEnquiryModalHouse(null)} productionHouse={enquiryModalHouse}/>
+      {activeChatEnquiryId && (
+        <EnquiryChatModal
+          isOpen={Boolean(activeChatEnquiryId)}
+          onClose={() => setActiveChatEnquiryId(null)}
+          enquiryId={activeChatEnquiryId}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingEnquiry && (
+        <Modal
+          isOpen={Boolean(deletingEnquiry)}
+          onClose={() => setDeletingEnquiry(null)}
+          title="Delete Creative Enquiry"
+          description={`Withdraw and delete "${deletingEnquiry.projectTitle}" sent to ${deletingEnquiry.productionHouseName}?`}
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-zinc-600 leading-relaxed font-normal">
+              This action will permanently delete this enquiry, including all messages and scope records from your dashboard.
+            </p>
+
+            <div className="p-3.5 bg-zinc-50 rounded-xl border border-zinc-200 text-xs text-zinc-600 space-y-1">
+              <div><strong>Project:</strong> {deletingEnquiry.projectTitle}</div>
+              <div><strong>Production House:</strong> {deletingEnquiry.productionHouseName}</div>
+              <div><strong>Status:</strong> <span className="capitalize">{deletingEnquiry.status.replace('_', ' ')}</span></div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-end gap-2.5">
+              <Button
+                variant="ghost"
+                size="md"
+                type="button"
+                onClick={() => setDeletingEnquiry(null)}
+                className="text-sm font-semibold"
+              >
+                Cancel
+              </Button>
+              <button
+                type="button"
+                onClick={() => {
+                  deleteEnquiry(deletingEnquiry.id);
+                  setDeletingEnquiry(null);
+                }}
+                className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-sm shadow-xs cursor-pointer transition-colors"
+              >
+                Yes, Delete Enquiry
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>);
 }

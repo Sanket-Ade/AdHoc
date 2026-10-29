@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
 import { formatINR } from '@/lib/format';
-import { MapPin, CheckCircle2, Heart, Mail, Phone, Globe, ShieldCheck, Share2, Award, ArrowLeft } from 'lucide-react';
+import { MapPin, CheckCircle2, Heart, Mail, Phone, Globe, ShieldCheck, Share2, Award, ArrowLeft, Sparkles } from 'lucide-react';
 function ProductionHouseProfileContent() {
     const params = useParams();
     const houseId = params?.id;
@@ -63,10 +63,17 @@ function ProductionHouseProfileContent() {
                 <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900">
                   {house.name}
                 </h1>
-                {house.verified && (<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
+                {house.verified ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                     <CheckCircle2 className="w-4 h-4"/>
                     Verified Studio
-                  </span>)}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-semibold border border-amber-200/90">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600"/>
+                    Local & Independent Studio
+                  </span>
+                )}
                 <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-950 border border-yellow-300">
                   {house.availability}
                 </span>
@@ -123,6 +130,18 @@ function ProductionHouseProfileContent() {
           <div className="lg:col-span-8 space-y-6">
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (<div className="space-y-6">
+                {!house.verified && (
+                  <div className="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-amber-950 shadow-xs">
+                    <Sparkles className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                    <div className="space-y-0.5">
+                      <p className="font-bold text-amber-950">Local & Independent Studio Profile</p>
+                      <p className="text-zinc-600 leading-relaxed">
+                        Verification is not mandatory on Adhoc. We actively support unregistered local production houses and boutique filmmakers whose creative work and portfolio speak for themselves.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 {/* About Box */}
                 <div className="bg-white rounded-2xl p-6 sm:p-7 border border-zinc-200 shadow-soft space-y-4">
                   <h3 className="text-lg font-bold text-zinc-900">Studio Profile</h3>
@@ -154,20 +173,37 @@ function ProductionHouseProfileContent() {
                   </div>
 
                   {/* Technical Facilities & Equipment */}
-                  {house.equipmentFacilities && house.equipmentFacilities.length > 0 && (<div className="pt-4 border-t border-zinc-100 space-y-3">
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
-                        Equipment & Floor Specs
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-800">
-                        {house.equipmentFacilities.map((eq, idx) => (<div key={idx} className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 flex items-center gap-2.5 font-medium">
-                            <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0"/>
-                            <span className="truncate">{eq}</span>
-                          </div>))}
+                  {(() => {
+                    const equipmentList = Array.isArray(house.equipmentFacilities)
+                      ? house.equipmentFacilities
+                      : (typeof house.equipmentFacilities === 'string' ? house.equipmentFacilities : (house.equipment || ''))
+                          .split(/[\n,]+/)
+                          .map((s) => s.trim())
+                          .filter(Boolean);
+                    if (equipmentList.length === 0 && !house.studioFloorSpecs) return null;
+                    return (
+                      <div className="pt-4 border-t border-zinc-100 space-y-3">
+                        <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-700">
+                          The Equipment We Use
+                        </h4>
+                        {equipmentList.length > 0 && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-zinc-800">
+                            {equipmentList.map((eq, idx) => (
+                              <div key={idx} className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 flex items-center gap-2.5 font-medium">
+                                <span className="w-2 h-2 rounded-full bg-yellow-400 shrink-0" />
+                                <span className="truncate">{eq}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        {house.studioFloorSpecs && (
+                          <p className="text-sm text-zinc-600">
+                            Floor: <span className="text-zinc-900 font-medium">{house.studioFloorSpecs}</span>
+                          </p>
+                        )}
                       </div>
-                      {house.studioFloorSpecs && (<p className="text-sm text-zinc-600">
-                          Floor: <span className="text-zinc-900 font-medium">{house.studioFloorSpecs}</span>
-                        </p>)}
-                    </div>)}
+                    );
+                  })()}
                 </div>
 
                 {/* Notable Clients */}

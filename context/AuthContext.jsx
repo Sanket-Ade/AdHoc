@@ -25,6 +25,7 @@ const DEMO_PRODUCTION_HOUSE = {
 };
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
+    const [isLoadingAuth, setIsLoadingAuth] = useState(true);
     const [savedHouseIds, setSavedHouseIds] = useState(['ph-1', 'ph-3']);
     const [enquiries, setEnquiries] = useState(INITIAL_ENQUIRIES);
     const [productionHouses, setProductionHouses] = useState(MOCK_PRODUCTION_HOUSES);
@@ -42,15 +43,43 @@ export const AuthProvider = ({ children }) => {
             }
             const savedEnqs = localStorage.getItem('adhoc_enquiries');
             if (savedEnqs) {
-                setEnquiries(JSON.parse(savedEnqs));
+                const parsed = JSON.parse(savedEnqs);
+                // Ensure every enquiry has a messages array
+                const migrated = parsed.map((e) => {
+                    if (!e.messages || e.messages.length === 0) {
+                        const init = INITIAL_ENQUIRIES.find((ie) => ie.id === e.id);
+                        return {
+                            ...e,
+                            messages: init?.messages || [
+                                {
+                                    id: `msg-${e.id}-init`,
+                                    senderId: e.customerId || 'cust-1',
+                                    senderName: e.customerName || 'Client',
+                                    senderRole: 'customer',
+                                    content: e.description ? `Project Brief: ${e.description}` : 'Hi, we submitted our creative brief and look forward to discussing the project proposal.',
+                                    timestamp: e.createdAt || new Date().toISOString(),
+                                }
+                            ]
+                        };
+                    }
+                    return e;
+                });
+                setEnquiries(migrated);
             }
             const savedHouses = localStorage.getItem('adhoc_production_houses');
             if (savedHouses) {
-                setProductionHouses(JSON.parse(savedHouses));
+                const parsed = JSON.parse(savedHouses);
+                // Merge initial mock houses with saved houses so new mock studios (e.g. local indie studios) are always available
+                const existingIds = new Set(parsed.map((h) => h.id));
+                const merged = [...parsed, ...MOCK_PRODUCTION_HOUSES.filter((h) => !existingIds.has(h.id))];
+                setProductionHouses(merged);
             }
         }
         catch {
             // Fallback to default in-memory state
+        }
+        finally {
+            setIsLoadingAuth(false);
         }
     }, []);
     const showToast = (message, type = 'success') => {
@@ -60,12 +89,45 @@ export const AuthProvider = ({ children }) => {
         }, 4000);
     };
     const login = async (email, role, name) => {
+        let assignedId = `cust-${Date.now()}`;
+        let company = 'Creative Client Co.';
+        let userName = name || (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1));
+
+        try {
+            const savedUsers = localStorage.getItem('adhoc_registered_users');
+            const registeredList = savedUsers ? JSON.parse(savedUsers) : [];
+            const registeredUser = registeredList.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+            if (registeredUser) {
+                assignedId = registeredUser.id;
+                company = registeredUser.companyName;
+                userName = registeredUser.name;
+            }
+        } catch {
+            // fallback
+        }
+
+        if (role === 'production_house') {
+            // Check if there is an existing studio associated with this email
+            const existingStudio = productionHouses.find((h) => h.contactEmail?.toLowerCase() === email.toLowerCase());
+            if (existingStudio) {
+                assignedId = existingStudio.id;
+                company = existingStudio.name;
+            } else if (email === DEMO_PRODUCTION_HOUSE.email) {
+                assignedId = 'ph-1';
+                company = DEMO_PRODUCTION_HOUSE.companyName;
+            } else {
+                assignedId = assignedId.startsWith('ph-') ? assignedId : 'ph-1';
+                company = company || 'Studio Bombay Films';
+            }
+        }
+
         const newUser = {
-            id: role === 'production_house' ? 'ph-1' : `cust-${Date.now()}`,
-            name: name || (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1)),
+            id: assignedId,
+            productionHouseId: role === 'production_house' ? assignedId : undefined,
+            name: userName,
             email,
             role,
-            companyName: role === 'production_house' ? 'PixelCraft Studios' : 'Creative Client Co.',
+            companyName: company,
             createdAt: new Date().toISOString(),
             avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         };
@@ -80,19 +142,131 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('adhoc_user', JSON.stringify(targetUser));
         showToast(`Switched demo account: Logged in as ${targetUser.name} (${targetUser.role === 'customer' ? 'Business' : 'Production House'})`);
     };
-    const signup = async (email, name, role, companyName) => {
+    const signup = async (email, name, role, companyName, location) => {
+        if (role === 'production_house') {
+            const studioId = `ph-${Date.now()}`;
+            const studioName = companyName || `${name} Studios`;
+            const studioCity = location ? location.split(',')[0].trim() : 'Mumbai';
+            const studioLocation = location || `${studioCity}, India`;
+
+            const newStudio = {
+                id: studioId,
+                name: studioName,
+                slug: studioName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+                tagline: 'Independent Commercial & Creative Video Studio',
+                description: `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft high-quality commercial films, branded video, and social campaigns. Verification is optional on Adhoc — our portfolio speaks for our craft.`,
+                logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80',
+                coverImageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1400&auto=format&fit=crop&q=80',
+                location: studioLocation,
+                city: studioCity,
+                country: 'India',
+                verified: false, // NOT mandatory! Unregistered / local studios can freely build a profile
+                gstRegistered: false,
+                studioType: 'Independent / Local Studio',
+                rating: 5.0,
+                reviewCount: 0,
+                yearsInBusiness: 1,
+                teamSize: '5-12 Crew & Creatives',
+                responseRateHours: 2,
+                budgetTier: '₹',
+                minBudget: 50000,
+                availability: 'Available Now',
+                featured: false,
+                badges: ['Local Indie Studio', 'Portfolio Showcase'],
+                notableClients: ['Local Brands & Creators'],
+                contactEmail: email,
+                phone: '+91 98765 43210',
+                website: `https://${studioName.toLowerCase().replace(/[^a-z0-9]+/g, '')}.local`,
+                equipmentFacilities: [
+                    '4K Cinema Camera Rig Package',
+                    'High-CRI Field Lighting Kit',
+                    'DaVinci Resolve Color Grading Suite',
+                ],
+                studioFloorSpecs: 'Boutique studio workspace with edit & audio suite',
+                services: [
+                    {
+                        id: `s-${Date.now()}-1`,
+                        name: 'Video Production',
+                        description: 'End-to-end commercial video production: concept ideation, cinematography, editing, and sound design.',
+                        startingPrice: 65000,
+                        turnaroundDays: 12,
+                        tags: ['Commercial Ad', 'Brand Narrative', 'Music Video', '4K Master'],
+                    },
+                    {
+                        id: `s-${Date.now()}-2`,
+                        name: 'Digital Advertisement',
+                        description: 'Short-form vertical video ads, dynamic social hooks, and promotional reels.',
+                        startingPrice: 25000,
+                        turnaroundDays: 5,
+                        tags: ['Social Video', '9:16 Reels', 'Performance Hooks'],
+                    },
+                ],
+                portfolio: [
+                    {
+                        id: `p-${Date.now()}-1`,
+                        title: 'Debut Commercial Showcase',
+                        category: 'Video Production',
+                        clientName: 'Local Showcase Client',
+                        thumbnailUrl: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&auto=format&fit=crop&q=80',
+                        description: 'Cinematic commercial reel highlighting narrative pacing, color work, and creative cinematography.',
+                        metrics: 'Debut Portfolio Film',
+                        year: 2026,
+                        featured: true,
+                    },
+                ],
+                reviews: [],
+            };
+
+            const newUser = {
+                id: studioId,
+                productionHouseId: studioId,
+                name,
+                email,
+                role,
+                companyName: studioName,
+                createdAt: new Date().toISOString(),
+                avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+            };
+
+            setProductionHouses((prev) => {
+                const updated = [newStudio, ...prev];
+                localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+                return updated;
+            });
+
+            try {
+                const savedUsers = localStorage.getItem('adhoc_registered_users');
+                const registeredList = savedUsers ? JSON.parse(savedUsers) : [];
+                const updatedList = [newUser, ...registeredList.filter((u) => u.email?.toLowerCase() !== email.toLowerCase())];
+                localStorage.setItem('adhoc_registered_users', JSON.stringify(updatedList));
+            } catch {
+                // ignore
+            }
+
+            showToast(`Account successfully created for ${studioName}! Please log in.`, 'success');
+            return true;
+        }
+
         const newUser = {
             id: `usr-${Date.now()}`,
             name,
             email,
             role,
-            companyName: companyName || (role === 'production_house' ? `${name} Studios` : `${name} Ventures`),
+            companyName: companyName || `${name} Ventures`,
             createdAt: new Date().toISOString(),
             avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         };
-        setUser(newUser);
-        localStorage.setItem('adhoc_user', JSON.stringify(newUser));
-        showToast(`Account successfully created! Welcome to Adhoc, ${name}.`);
+
+        try {
+            const savedUsers = localStorage.getItem('adhoc_registered_users');
+            const registeredList = savedUsers ? JSON.parse(savedUsers) : [];
+            const updatedList = [newUser, ...registeredList.filter((u) => u.email?.toLowerCase() !== email.toLowerCase())];
+            localStorage.setItem('adhoc_registered_users', JSON.stringify(updatedList));
+        } catch {
+            // ignore
+        }
+
+        showToast(`Account successfully created for ${name}! Please log in.`, 'success');
         return true;
     };
     const logout = () => {
@@ -114,12 +288,23 @@ export const AuthProvider = ({ children }) => {
     };
     const isHouseSaved = (houseId) => savedHouseIds.includes(houseId);
     const addEnquiry = (newEnquiryData) => {
+        const initialMsg = {
+            id: `msg-${Date.now()}`,
+            senderId: newEnquiryData.customerId || 'cust-1',
+            senderName: newEnquiryData.customerName || 'Client',
+            senderRole: 'customer',
+            content: newEnquiryData.description
+                ? `Initial Project Brief: ${newEnquiryData.description}`
+                : 'Hi, we submitted our creative brief and look forward to discussing the project scope.',
+            timestamp: new Date().toISOString(),
+        };
         const created = {
             ...newEnquiryData,
             id: `enq-${Date.now()}`,
             status: 'pending',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
+            messages: [initialMsg],
         };
         setEnquiries((prev) => {
             const updated = [created, ...prev];
@@ -128,6 +313,94 @@ export const AuthProvider = ({ children }) => {
         });
         showToast(`Enquiry "${created.projectTitle}" successfully sent to ${created.productionHouseName}!`);
         return created;
+    };
+    const sendEnquiryMessage = (enquiryId, content, attachment) => {
+        if (!content?.trim() && !attachment) return null;
+
+        let sentMessage = null;
+        let targetEnquiry = null;
+
+        setEnquiries((prev) => {
+            const updated = prev.map((enq) => {
+                if (enq.id === enquiryId) {
+                    targetEnquiry = enq;
+                    const isStudioUser = user?.role === 'production_house';
+                    const senderName = isStudioUser
+                        ? (enq.productionHouseName || user?.companyName || user?.name || 'Production Studio')
+                        : (user?.name || enq.customerName || 'Business Client');
+                    const senderRole = isStudioUser ? 'production_house' : 'customer';
+                    const senderId = user?.id || (isStudioUser ? enq.productionHouseId : enq.customerId);
+
+                    sentMessage = {
+                        id: `msg-${Date.now()}`,
+                        senderId,
+                        senderName,
+                        senderRole,
+                        content: content ? content.trim() : '',
+                        attachment: attachment || null,
+                        timestamp: new Date().toISOString(),
+                    };
+
+                    return {
+                        ...enq,
+                        messages: [...(enq.messages || []), sentMessage],
+                        updatedAt: new Date().toISOString(),
+                    };
+                }
+                return enq;
+            });
+            localStorage.setItem('adhoc_enquiries', JSON.stringify(updated));
+            return updated;
+        });
+
+        // Interactive simulation for demo: simulate a reply from the other party after 1.6s
+        if (targetEnquiry) {
+            const isStudioUser = user?.role === 'production_house';
+            const replyingRole = isStudioUser ? 'customer' : 'production_house';
+            const replyingName = isStudioUser ? targetEnquiry.customerName : targetEnquiry.productionHouseName;
+            const replyingId = isStudioUser ? targetEnquiry.customerId : targetEnquiry.productionHouseId;
+
+            const clientReplies = [
+                "Thank you for confirming! We are reviewing the deliverables with our marketing team.",
+                "Sounds great. Could you confirm if high-speed slow-motion camera is included in this quote?",
+                "That works with our timeline. We will prepare the product samples for the shoot location.",
+                "Understood. Let's schedule a recce call this week to finalize the storyboard."
+            ];
+            const studioReplies = [
+                "Thanks for the details! Our director and camera team reviewed your requirements.",
+                "Understood! We can definitely accommodate that location. Our lighting and grip package is ready.",
+                "We can deliver the first rough cut within 5 business days after shoot wrap.",
+                "Sounds perfect. We will update the project schedule and formal proposal accordingly."
+            ];
+
+            const pool = isStudioUser ? clientReplies : studioReplies;
+            const autoReplyText = pool[Math.floor(Math.random() * pool.length)];
+
+            setTimeout(() => {
+                setEnquiries((prev) => {
+                    const found = prev.find((e) => e.id === enquiryId);
+                    if (!found) return prev;
+                    const replyMsg = {
+                        id: `msg-rep-${Date.now()}`,
+                        senderId: replyingId,
+                        senderName: replyingName,
+                        senderRole: replyingRole,
+                        content: autoReplyText,
+                        timestamp: new Date().toISOString(),
+                    };
+                    const withReply = prev.map((e) => (e.id === enquiryId ? {
+                        ...e,
+                        messages: [...(e.messages || []), replyMsg],
+                        updatedAt: new Date().toISOString(),
+                    } : e));
+                    localStorage.setItem('adhoc_enquiries', JSON.stringify(withReply));
+                    showToast(`New message from ${replyingName}!`, 'info');
+                    return withReply;
+                });
+            }, 1600);
+        }
+
+        return sentMessage;
     };
     const updateEnquiryStatus = (enquiryId, status, quoteAmount, quoteNotes) => {
         setEnquiries((prev) => {
@@ -155,6 +428,17 @@ export const AuthProvider = ({ children }) => {
             declined: 'Declined',
         };
         showToast(`Enquiry ${statusLabels[status]}.`);
+    };
+    const deleteEnquiry = (enquiryId) => {
+        let deletedTitle = '';
+        setEnquiries((prev) => {
+            const target = prev.find((e) => e.id === enquiryId);
+            deletedTitle = target?.projectTitle || 'Enquiry';
+            const updated = prev.filter((e) => e.id !== enquiryId);
+            localStorage.setItem('adhoc_enquiries', JSON.stringify(updated));
+            return updated;
+        });
+        showToast(`Enquiry "${deletedTitle}" deleted.`);
     };
     const updateProductionHouse = (houseId, updates) => {
         setProductionHouses((prev) => {
@@ -200,10 +484,92 @@ export const AuthProvider = ({ children }) => {
         });
         showToast('Portfolio item removed.');
     };
+    const toggleVerification = (houseId) => {
+        let isNowVerified = false;
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    isNowVerified = !h.verified;
+                    const badges = isNowVerified
+                        ? Array.from(new Set(['GST Verified', ...h.badges.filter((b) => b !== 'Local Indie Studio')]))
+                        : h.badges.filter((b) => b !== 'GST Verified');
+                    if (!isNowVerified && !badges.includes('Local Indie Studio')) {
+                        badges.push('Local Indie Studio');
+                    }
+                    return {
+                        ...h,
+                        verified: isNowVerified,
+                        gstRegistered: isNowVerified,
+                        badges,
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast(isNowVerified ? 'Studio verification badge enabled!' : 'Studio switched to independent/local status (Verification is optional).');
+    };
+    const requestVerification = (houseId, details = {}) => {
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    return {
+                        ...h,
+                        verified: true,
+                        gstRegistered: true,
+                        gstNumber: details.gstNumber || '27AAACP0123M1ZT',
+                        badges: Array.from(new Set(['GST Verified', ...h.badges])),
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast('Verification details recorded! Verified badge active.');
+    };
+    const addService = (houseId, service) => {
+        const newService = {
+            ...service,
+            id: `s-${Date.now()}`,
+        };
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    return {
+                        ...h,
+                        services: [...(h.services || []), newService],
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast(`Added "${newService.name}" to services!`);
+    };
+    const deleteService = (houseId, serviceId) => {
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    return {
+                        ...h,
+                        services: (h.services || []).filter((s) => s.id !== serviceId),
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast('Service removed.');
+    };
     return (<AuthContext.Provider value={{
             user,
             role: user?.role || null,
             isAuthenticated: Boolean(user),
+            isLoadingAuth,
             savedHouseIds,
             enquiries,
             productionHouses,
@@ -214,10 +580,16 @@ export const AuthProvider = ({ children }) => {
             toggleSaveHouse,
             isHouseSaved,
             addEnquiry,
+            deleteEnquiry,
+            sendEnquiryMessage,
             updateEnquiryStatus,
             updateProductionHouse,
             addPortfolioItem,
             deletePortfolioItem,
+            toggleVerification,
+            requestVerification,
+            addService,
+            deleteService,
             toast,
             showToast,
         }}>

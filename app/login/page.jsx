@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Mail, Lock, Building2, Briefcase, UserCircle2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { Mail, Lock, Building2, Briefcase, UserCircle2, ArrowRight, ShieldCheck, Sparkles, MapPin, Eye, EyeOff, Check, CheckCircle2 } from 'lucide-react';
 export function AuthForm({ initialMode }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -18,12 +18,19 @@ export function AuthForm({ initialMode }) {
     // Form states
     const [name, setName] = useState('');
     const [companyName, setCompanyName] = useState('');
+    const [location, setLocation] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(true);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState(
+        searchParams.get('registered') === 'true'
+            ? 'Account created successfully! Please sign in with your credentials to continue.'
+            : ''
+    );
     const [isLoading, setIsLoading] = useState(false);
-    const { login, signup, loginAsDemo } = useAuth();
+    const { login, signup } = useAuth();
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -33,6 +40,14 @@ export function AuthForm({ initialMode }) {
         }
         if (password.length < 6) {
             setError('Password must be at least 6 characters.');
+            return;
+        }
+        if (!/[A-Z]/.test(password)) {
+            setError('Password must contain at least one uppercase letter (A-Z).');
+            return;
+        }
+        if (!/[^A-Za-z0-9\s]/.test(password)) {
+            setError('Password must contain at least one special symbol (e.g. !@#$%^&*).');
             return;
         }
         setIsLoading(true);
@@ -67,19 +82,26 @@ export function AuthForm({ initialMode }) {
             setError('Password must be at least 6 characters.');
             return;
         }
+        if (!/[A-Z]/.test(password)) {
+            setError('Password must contain at least one uppercase letter (A-Z).');
+            return;
+        }
+        if (!/[^A-Za-z0-9\s]/.test(password)) {
+            setError('Password must contain at least one special symbol (e.g. !@#$%^&*).');
+            return;
+        }
         if (!agreeTerms) {
             setError('You must accept the terms to continue.');
             return;
         }
         setIsLoading(true);
         try {
-            await signup(email, name, role, companyName);
-            if (role === 'production_house') {
-                router.push('/dashboard/production-house');
-            }
-            else {
-                router.push('/dashboard/customer');
-            }
+            await signup(email, name, role, companyName, location);
+            setPassword('');
+            setShowPassword(false);
+            setSuccessMessage(`Account created successfully! Please log in as ${role === 'customer' ? 'Business' : 'Production House'} to continue.`);
+            setMode('login');
+            router.push(`/login?role=${role}&registered=true`);
         }
         catch {
             setError('Failed to create account. Please try again.');
@@ -88,39 +110,32 @@ export function AuthForm({ initialMode }) {
             setIsLoading(false);
         }
     };
-    const handleDemoLogin = (demoRole) => {
-        loginAsDemo(demoRole);
-        if (demoRole === 'production_house') {
-            router.push('/dashboard/production-house');
-        }
-        else {
-            router.push('/dashboard/customer');
-        }
-    };
-    return (<div className="bg-[#FAFAFA] text-zinc-900 min-h-screen py-10 sm:py-16 flex items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <Link href="/" className="inline-flex items-center gap-2 group">
-            <div className="w-9 h-9 rounded-xl bg-yellow-300 border border-yellow-400 flex items-center justify-center text-zinc-950 font-black text-base shadow-glow-yellow transition-transform group-hover:scale-105">
-              ad
-            </div>
-            <span className="text-2xl font-black text-zinc-900 tracking-tight font-sans">
-              adhoc<span className="text-amber-500">.</span>
-            </span>
-          </Link>
-          <h1 className="text-2xl font-extrabold text-zinc-900 tracking-tight">
-            {mode === 'login' ? 'Login' : 'Create Account'}
-          </h1>
-          <p className="text-xs text-zinc-500 max-w-xs mx-auto">
-            {mode === 'login'
-            ? `Sign in to your ${role === 'customer' ? 'Business' : 'Production House'} account`
-            : `Join as a ${role === 'customer' ? 'Business to commission work' : 'Production House to receive briefs'}`}
-          </p>
-        </div>
+    return (
+      <div
+        className="relative min-h-screen py-10 sm:py-16 flex items-center justify-center px-4 bg-cover  bg-center bg-no-repeat text-zinc-900 overflow-x-hidden"
+        style={{ backgroundImage: "url('/login-bg.png')",
+          backgroundPosition: "900px -200px"
+         }}
+      >
+        {/* Subtle dark backdrop overlay to ensure crisp contrast and readability */}
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-none" />
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl p-6 sm:p-7 border border-zinc-200/90 shadow-soft space-y-5 animate-in fade-in duration-200">
+        <div className="relative z-10 w-full max-w-md space-y-6">
+          {/* Brand Header */}
+          <div className="text-center space-y-2">
+            
+            <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
+              {mode === 'login' ? 'Login' : 'Create Account'}
+            </h1>
+            <p className="text-xs text-zinc-200 max-w-xs mx-auto drop-shadow-xs font-medium">
+              {mode === 'login'
+              ? `Sign in to your ${role === 'customer' ? 'Business' : 'Production House'} account`
+              : `Join as a ${role === 'customer' ? 'Business to commission work' : 'Production House to receive briefs'}`}
+            </p>
+          </div>
+
+          {/* Card */}
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-7 border border-white/60 shadow-2xl space-y-5 animate-in fade-in duration-200">
           
           {/* Role Selector Tabs (Business vs Production House) */}
           <div>
@@ -134,7 +149,7 @@ export function AuthForm({ initialMode }) {
             </div>
 
             <div className="grid grid-cols-2 p-1.5 bg-zinc-100 rounded-xl border border-zinc-200/60 gap-1">
-              <button type="button" onClick={() => setRole('customer')} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'customer'
+              <button type="button" onClick={() => { setRole('customer'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'customer'
             ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
             : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
                 <div className="flex items-center gap-1.5">
@@ -144,33 +159,38 @@ export function AuthForm({ initialMode }) {
                 <span className="text-[10px] text-zinc-600 font-normal">Brands & Agencies</span>
               </button>
 
-              <button type="button" onClick={() => setRole('production_house')} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'production_house'
+              <button type="button" onClick={() => { setRole('production_house'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'production_house'
             ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
             : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
                 <div className="flex items-center gap-1.5">
                   <Building2 className={`w-4 h-4 ${role === 'production_house' ? 'text-amber-600' : 'text-zinc-400'}`}/>
                   <span>Production House</span>
                 </div>
-                <span className="text-[10px] text-zinc-600 font-normal">Studios & Creators</span>
+                <span className="text-[10px] text-zinc-600 font-normal">Commercial & Local Indie Studios</span>
               </button>
             </div>
           </div>
 
-          {/* Quick Demo Login Option (Available in login mode for fast review) */}
-          {mode === 'login' && (<div className="p-3 bg-zinc-50 rounded-xl border border-zinc-200/80 text-center space-y-2">
-              <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-zinc-600">
-                <Sparkles className="w-3.5 h-3.5 text-amber-600"/>
-                <span>Instant Demo Access</span>
+          {/* Verification is Optional Notice for Production Houses */}
+          {role === 'production_house' && (
+            <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-[11px] text-amber-950 flex items-start gap-2.5">
+              <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold">Verification is completely optional</p>
+                <p className="text-zinc-600 leading-relaxed">
+                  Local production houses and independent creators that are not registered yet can build a full profile, showcase their best work, and win client briefs.
+                </p>
               </div>
-              <div className="flex gap-2">
-                <button type="button" onClick={() => handleDemoLogin('customer')} className="flex-1 py-1.5 px-2 bg-white hover:bg-yellow-50 hover:border-yellow-300 text-zinc-700 text-xs font-semibold rounded-lg border border-zinc-200 shadow-xs transition-colors cursor-pointer">
-                  Demo as Business
-                </button>
-                <button type="button" onClick={() => handleDemoLogin('production_house')} className="flex-1 py-1.5 px-2 bg-white hover:bg-yellow-50 hover:border-yellow-300 text-zinc-700 text-xs font-semibold rounded-lg border border-zinc-200 shadow-xs transition-colors cursor-pointer">
-                  Demo as Production House
-                </button>
-              </div>
-            </div>)}
+            </div>
+          )}
+
+          {/* Success Message Banner */}
+          {successMessage && mode === 'login' && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-semibold flex items-center gap-2 animate-in fade-in">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{successMessage}</span>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (<div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 font-medium">
@@ -182,9 +202,28 @@ export function AuthForm({ initialMode }) {
               <Input label={role === 'customer' ? 'Business Work Email' : 'Production House Work Email'} type="email" required placeholder={role === 'customer' ? 'business@aurorabev.in' : 'contact@studiobombayfilms.in'} value={email} onChange={(e) => setEmail(e.target.value)} leftIcon={<Mail className="w-4 h-4"/>}/>
 
               <div>
-                <Input label="Password" type="password" required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} leftIcon={<Lock className="w-4 h-4"/>}/>
+                <Input
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  leftIcon={<Lock className="w-4 h-4"/>}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-zinc-400 hover:text-zinc-700 p-1 -mr-1 rounded-md transition-colors cursor-pointer focus:outline-none"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                    </button>
+                  }
+                />
                 <div className="flex justify-end mt-1">
-                  <Link href="/forgot-password" className="text-[11px] text-amber-800 hover:text-amber-900 hover:underline font-medium">
+                  <Link href="/forgot-password" className="text-[12px] text-amber-800 hover:text-amber-900 hover:underline font-medium">
                     Forgot password?
                   </Link>
                 </div>
@@ -205,9 +244,51 @@ export function AuthForm({ initialMode }) {
                 ? 'e.g. CineCraft Studios'
                 : 'e.g. Tata Consumer Products'} value={companyName} onChange={(e) => setCompanyName(e.target.value)} leftIcon={<Building2 className="w-4 h-4"/>}/>
 
+              {role === 'production_house' && (
+                <Input label="Studio Base City / Region" placeholder="e.g. Pune, Jaipur, Bandra Mumbai, Bengaluru" value={location} onChange={(e) => setLocation(e.target.value)} leftIcon={<MapPin className="w-4 h-4"/>}/>
+              )}
+
               <Input label={role === 'customer' ? 'Business Email' : 'Production House Email'} type="email" required placeholder={role === 'customer' ? 'vikram@company.com' : 'contact@cinecraft.in'} value={email} onChange={(e) => setEmail(e.target.value)} leftIcon={<Mail className="w-4 h-4"/>}/>
 
-              <Input label="Password (min 6 chars)" type="password" required placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} leftIcon={<Lock className="w-4 h-4"/>}/>
+              <div>
+                <Input
+                  label="Password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  leftIcon={<Lock className="w-4 h-4"/>}
+                  rightIcon={
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="text-zinc-400 hover:text-zinc-700 p-1 -mr-1 rounded-md transition-colors cursor-pointer focus:outline-none"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4"/> : <Eye className="w-4 h-4"/>}
+                    </button>
+                  }
+                />
+                <div className="mt-2 p-2.5 bg-zinc-50 rounded-xl border border-zinc-200/80 space-y-1 text-[11px]">
+                  <span className="text-zinc-500 font-semibold block">Password must contain:</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 pt-0.5">
+                    <span className={`inline-flex items-center gap-1 font-medium transition-colors ${password.length >= 6 ? 'text-emerald-700' : 'text-zinc-400'}`}>
+                      <Check className={`w-3 h-3 ${password.length >= 6 ? 'text-emerald-600' : 'text-zinc-300'}`} />
+                      Min 6 characters
+                    </span>
+                    <span className={`inline-flex items-center gap-1 font-medium transition-colors ${/[A-Z]/.test(password) ? 'text-emerald-700' : 'text-zinc-400'}`}>
+                      <Check className={`w-3 h-3 ${/[A-Z]/.test(password) ? 'text-emerald-600' : 'text-zinc-300'}`} />
+                      1 Uppercase (A-Z)
+                    </span>
+                    <span className={`inline-flex items-center gap-1 font-medium transition-colors ${/[^A-Za-z0-9\s]/.test(password) ? 'text-emerald-700' : 'text-zinc-400'}`}>
+                      <Check className={`w-3 h-3 ${/[^A-Za-z0-9\s]/.test(password) ? 'text-emerald-600' : 'text-zinc-300'}`} />
+                      1 Special symbol
+                    </span>
+                  </div>
+                </div>
+              </div>
 
               <label className="flex items-center gap-2 text-xs text-zinc-600 cursor-pointer pt-1">
                 <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="rounded accent-amber-500 cursor-pointer"/>
@@ -225,6 +306,8 @@ export function AuthForm({ initialMode }) {
                 Don&apos;t have an account?{' '}
                 <button type="button" onClick={() => {
                 setError('');
+                setSuccessMessage('');
+                setShowPassword(false);
                 setMode('signup');
             }} className="text-amber-800 hover:text-amber-950 font-bold underline underline-offset-2 transition-colors cursor-pointer ml-1">
                   Sign Up
@@ -233,6 +316,8 @@ export function AuthForm({ initialMode }) {
                 Already have an account?{' '}
                 <button type="button" onClick={() => {
                 setError('');
+                setSuccessMessage('');
+                setShowPassword(false);
                 setMode('login');
             }} className="text-amber-800 hover:text-amber-950 font-bold underline underline-offset-2 transition-colors cursor-pointer ml-1">
                   Log In
@@ -242,15 +327,15 @@ export function AuthForm({ initialMode }) {
         </div>
 
         {/* Security Footer Note */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-500">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600"/>
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-300 drop-shadow-xs">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400"/>
           <span>Encrypted production credentials • Zero spam</span>
         </div>
       </div>
     </div>);
 }
 export default function LoginPage() {
-    return (<Suspense fallback={<div className="min-h-screen bg-[#FAFAFA]"/>}>
+    return (<Suspense fallback={<div className="min-h-screen bg-zinc-950"/>}>
       <AuthForm initialMode="login"/>
     </Suspense>);
 }

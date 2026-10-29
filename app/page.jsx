@@ -7,7 +7,7 @@ import { SendEnquiryModal } from '@/components/SendEnquiryModal';
 import { useAuth } from '@/context/AuthContext';
 import { POPULAR_CATEGORIES } from '@/lib/mock-data';
 import { formatINR } from '@/lib/format';
-import { Search, MapPin, ArrowRight, Sparkles, ShieldCheck, Video, Printer, FileText, MonitorPlay, Camera, Compass, Layers, ChevronRight, Heart } from 'lucide-react';
+import { Search, MapPin, ArrowRight, Sparkles, ShieldCheck, CheckCircle2, Video, Printer, FileText, MonitorPlay, Camera, Compass, Layers, ChevronRight, Heart } from 'lucide-react';
 const CATEGORY_ICON_MAP = {
     Video: <Video className="w-4 h-4"/>,
     Sparkles: <Sparkles className="w-4 h-4"/>,
@@ -87,7 +87,7 @@ export default function HomePage() {
           <div className="max-w-3xl space-y-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-yellow-300 text-zinc-950 text-xs sm:text-sm font-bold border border-yellow-400 shadow-sm">
               <ShieldCheck className="w-4 h-4 text-zinc-950"/>
-              <span>Verified Commercial Roster • FY 2026</span>
+              <span>Commercial Studios & Local Indie Creators • 2026</span>
             </div>
 
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black  text-white tracking-tight leading-[1.1] drop-shadow-sm">
@@ -96,7 +96,7 @@ export default function HomePage() {
 
             <p className="text-base sm:text-lg text-zinc-100 max-w-2xl leading-relaxed font-medium drop-shadow-xs">
               Procure broadcast ad films, TVCs, performance digital video, 
-              and high-impact digital advertisement campaigns directly from verified Indian facilities.
+              and high-impact digital campaigns from top studios and talented local production houses.
             </p>
 
             {/* Hub Tabs */}
@@ -206,8 +206,8 @@ export default function HomePage() {
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider text-yellow-300">
                   Roster Index
                 </span>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  GST Verified
+                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-yellow-300/20 text-yellow-300 border border-yellow-300/40">
+                  Verified & Local Studios
                 </span>
               </div>
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white drop-shadow-sm">
@@ -245,7 +245,14 @@ export default function HomePage() {
                       <div className="absolute bottom-3 left-4 right-4 flex items-center gap-3">
                         <img src={house.logoUrl} alt={house.name} className="w-12 h-12 rounded-xl object-cover border border-white/40 shadow-md bg-white shrink-0"/>
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-base sm:text-lg font-bold text-white truncate drop-shadow-xs">{house.name}</h3>
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-base sm:text-lg font-bold text-white truncate drop-shadow-xs">{house.name}</h3>
+                            {house.verified ? (
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" title="GST Verified"/>
+                            ) : (
+                              <Sparkles className="w-3.5 h-3.5 text-yellow-300 shrink-0" title="Local / Independent Studio"/>
+                            )}
+                          </div>
                           <p className="text-xs sm:text-sm text-zinc-200 truncate flex items-center gap-1 font-medium">
                             <MapPin className="w-3.5 h-3.5 text-yellow-300 shrink-0"/>
                             {house.location}
@@ -458,19 +465,28 @@ export default function HomePage() {
 
       {/* 7. BOTTOM DIRECTORY CTA */}
       <section className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-[#FAFAFA]">
-        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-6 p-6 sm:p-10 bg-zinc-900 text-white rounded-3xl border border-zinc-800 shadow-xl">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6 p-6 sm:p-10 bg-zinc-900 text-white rounded-3xl border border-zinc-800 shadow-xl">
           <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-300/10 text-yellow-300 text-xs font-bold border border-yellow-300/30">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>For Studios & Brands</span>
+            </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white">
-              Ready to Commission a Production Run?
+              Ready to Produce or Showcase Work?
             </h2>
-            <p className="text-sm sm:text-base text-zinc-300">
-              Explore verified studios by capability and budget.
+            <p className="text-sm sm:text-base text-zinc-300 max-w-xl">
+              Clients explore verified facilities & local indie studios. Production houses can create a profile for free — verification is never mandatory.
             </p>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
             <Link href="/explore">
-              <Button variant="primary" size="lg" className="text-sm sm:text-base font-bold">
+              <Button variant="primary" size="lg" className="text-sm sm:text-base font-bold w-full">
                 Browse Directory
+              </Button>
+            </Link>
+            <Link href="/signup?role=production_house">
+              <Button variant="outline" size="lg" className="text-sm sm:text-base font-bold bg-white/10 text-white border-white/20 hover:bg-white/20 w-full">
+                List Your Studio
               </Button>
             </Link>
           </div>

@@ -18,18 +18,11 @@ export default function ForgotPasswordPage() {
             setIsSubmitted(true);
         }, 500);
     };
-    return (<div className="bg-[#FAFAFA] text-zinc-900 min-h-screen py-12 sm:py-20 flex items-center justify-center px-4">
+    return (<div className="bg-[#FAFAFA] text-zinc-900 min-h-screen py-12 mt-[-60px] sm:py-20 flex items-center justify-center px-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-1.5">
-          <Link href="/" className="inline-flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-yellow-300 border border-yellow-400 flex items-center justify-center text-zinc-950 font-black text-base shadow-glow-yellow">
-              ad
-            </div>
-            <span className="text-2xl font-black text-zinc-900 tracking-tight">
-              adhoc<span className="text-amber-500">.</span>
-            </span>
-          </Link>
-          <h1 className="text-xl font-bold text-zinc-900">Reset Password</h1>
+          
+          <h1 className="text-2xl font-bold text-zinc-900">Reset Password</h1>
           <p className="text-xs text-zinc-500">
             Enter registered email to receive access instructions.
           </p>

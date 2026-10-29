@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProductionHouseCardSkeleton } from '@/components/ui/Skeleton';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
 import { formatINR } from '@/lib/format';
-import { Search, MapPin, SlidersHorizontal, X, CheckCircle2, Heart, ArrowUpDown, Building2, ShieldCheck } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, X, CheckCircle2, Heart, ArrowUpDown, Building2, ShieldCheck, Sparkles } from 'lucide-react';
 function ExploreContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || '';
@@ -24,6 +24,7 @@ function ExploreContent() {
     const [selectedBudget, setSelectedBudget] = useState('all');
     const [minExperience, setMinExperience] = useState(0);
     const [availability, setAvailability] = useState('all');
+    const [verificationFilter, setVerificationFilter] = useState('all'); // 'all', 'verified', 'independent'
     const [sortBy, setSortBy] = useState('relevance');
     const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
     // Enquiry modal state
@@ -34,13 +35,20 @@ function ExploreContent() {
     const filteredHouses = useMemo(() => {
         return productionHouses
             .filter((house) => {
+            // Verification / Studio Type filter
+            if (verificationFilter === 'verified' && !house.verified) {
+                return false;
+            }
+            if (verificationFilter === 'independent' && house.verified) {
+                return false;
+            }
             // Search text matching name, tagline, description, services, notable clients
             if (searchQuery.trim()) {
                 const q = searchQuery.toLowerCase();
-                const matchesName = house.name.toLowerCase().includes(q);
-                const matchesTagline = house.tagline.toLowerCase().includes(q);
-                const matchesServices = house.services.some((s) => s.name.toLowerCase().includes(q));
-                const matchesClients = house.notableClients.some((c) => c.toLowerCase().includes(q));
+                const matchesName = house.name?.toLowerCase().includes(q);
+                const matchesTagline = house.tagline?.toLowerCase().includes(q);
+                const matchesServices = house.services?.some((s) => s.name.toLowerCase().includes(q));
+                const matchesClients = house.notableClients?.some((c) => c.toLowerCase().includes(q));
                 if (!matchesName && !matchesTagline && !matchesServices && !matchesClients) {
                     return false;
                 }
@@ -48,7 +56,7 @@ function ExploreContent() {
             // Category filter
             if (selectedCategory && selectedCategory !== 'all') {
                 const normSelected = selectedCategory.toLowerCase();
-                const hasCategory = house.services.some((s) => {
+                const hasCategory = house.services?.some((s) => {
                     const normService = s.name.toLowerCase();
                     return normService === normSelected ||
                         (normSelected.startsWith('digital') && normService.startsWith('digital')) ||
@@ -59,7 +67,7 @@ function ExploreContent() {
             }
             // Location filter
             if (selectedLocation && selectedLocation !== 'all') {
-                if (!house.location.toLowerCase().includes(selectedLocation.toLowerCase())) {
+                if (!house.location?.toLowerCase().includes(selectedLocation.toLowerCase())) {
                     return false;
                 }
             }
@@ -99,10 +107,13 @@ function ExploreContent() {
         selectedBudget,
         minExperience,
         availability,
+        verificationFilter,
         sortBy,
     ]);
     const activeFilterCount = useMemo(() => {
         let count = 0;
+        if (verificationFilter !== 'all')
+            count++;
         if (selectedCategory && selectedCategory !== 'all')
             count++;
         if (selectedLocation && selectedLocation !== 'all')
@@ -114,7 +125,7 @@ function ExploreContent() {
         if (availability !== 'all')
             count++;
         return count;
-    }, [selectedCategory, selectedLocation, selectedBudget, minExperience, availability]);
+    }, [verificationFilter, selectedCategory, selectedLocation, selectedBudget, minExperience, availability]);
     const clearAllFilters = () => {
         setSearchQuery('');
         setSelectedCategory('');
@@ -122,6 +133,7 @@ function ExploreContent() {
         setSelectedBudget('all');
         setMinExperience(0);
         setAvailability('all');
+        setVerificationFilter('all');
     };
     return (
     <div
@@ -142,14 +154,14 @@ function ExploreContent() {
 
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-300 text-zinc-950 text-xs font-bold border border-yellow-400 shadow-sm">
             <ShieldCheck className="w-3.5 h-3.5 text-zinc-950"/>
-            <span>Verified Commercial Roster • Direct Indian Production Hubs</span>
+            <span>Commercial Studios & Independent Local Creators</span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md">
             Production House Directory
           </h1>
           <p className="text-base sm:text-lg text-zinc-200 mt-1 max-w-2xl font-medium drop-shadow-xs leading-relaxed">
-            Compare camera packages, verified rate cards, and soundstage specifications across India's leading commercial studios.
+            Discover top verified commercial facilities and exceptional local independent production houses across India. Compare rate cards, creative reels, and camera packages.
           </p>
         </div>
 
@@ -207,6 +219,14 @@ function ExploreContent() {
             <span className="text-xs font-bold uppercase tracking-wider text-yellow-300 ml-1">
               Active Filters:
             </span>
+            {verificationFilter !== 'all' && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
+                {verificationFilter === 'verified' ? 'GST Verified Only' : 'Local & Indie Studios'}
+                <button onClick={() => setVerificationFilter('all')} className="hover:text-rose-700 cursor-pointer">
+                  <X className="w-3.5 h-3.5"/>
+                </button>
+              </span>
+            )}
             {selectedCategory && selectedCategory !== 'all' && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
                 Category: {selectedCategory}
@@ -270,8 +290,53 @@ function ExploreContent() {
               )}
             </div>
 
-            {/* 1. Service Category */}
+            {/* 1. Studio Type & Verification */}
             <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-zinc-900 block mb-2.5">
+                Studio Verification Type
+              </label>
+              <div className="space-y-1 text-sm text-zinc-700">
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="verification"
+                    checked={verificationFilter === 'all'}
+                    onChange={() => setVerificationFilter('all')}
+                    className="accent-amber-500 w-4 h-4"
+                  />
+                  <span className="font-medium">All Studios</span>
+                </label>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="verification"
+                    checked={verificationFilter === 'verified'}
+                    onChange={() => setVerificationFilter('verified')}
+                    className="accent-amber-500 w-4 h-4"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="font-medium">GST Verified</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="verification"
+                    checked={verificationFilter === 'independent'}
+                    onChange={() => setVerificationFilter('independent')}
+                    className="accent-amber-500 w-4 h-4"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    <span className="font-medium">Local & Indie Studios</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* 2. Service Category */}
+            <div className="pt-4 border-t border-zinc-100">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-900 block mb-2.5">
                 Capability
               </label>
@@ -309,7 +374,7 @@ function ExploreContent() {
               </div>
             </div>
 
-            {/* 2. Location */}
+            {/* 3. Location */}
             <div className="pt-4 border-t border-zinc-100">
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-900 block mb-2">
                 Location
@@ -321,6 +386,8 @@ function ExploreContent() {
               >
                 <option value="all">All Indian Hubs</option>
                 <option value="Mumbai">Mumbai (Andheri / Bandra / Goregaon)</option>
+                <option value="Pune">Pune (FC Road / Baner / Koregaon)</option>
+                <option value="Jaipur">Jaipur (C-Scheme / Mansarovar)</option>
                 <option value="Bengaluru">Bengaluru (Indiranagar / Koramangala)</option>
                 <option value="Delhi NCR">Delhi NCR (CP / Gurugram / Okhla)</option>
                 <option value="Hyderabad">Hyderabad (Jubilee Hills / Hitec City)</option>
@@ -415,7 +482,7 @@ function ExploreContent() {
               </p>
               {filteredHouses.length > 0 && (
                 <span className="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/40 font-semibold backdrop-blur-xs">
-                  100% Identity Vetted
+                  Verified & Curated Studios
                 </span>
               )}
             </div>
@@ -449,8 +516,10 @@ function ExploreContent() {
                                   <h3 className="text-lg font-bold text-zinc-950 truncate group-hover:text-amber-900 transition-colors">
                                     {house.name}
                                   </h3>
-                                  {house.verified && (
-                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" title="GST Verified"/>
+                                  {house.verified ? (
+                                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" title="GST Verified Studio"/>
+                                  ) : (
+                                    <Sparkles className="w-4 h-4 text-amber-600 shrink-0" title="Independent / Local Studio"/>
                                   )}
                                 </div>
                                 <p className="text-xs sm:text-sm text-zinc-600 truncate flex items-center gap-1.5 mt-0.5 font-medium">
@@ -477,6 +546,26 @@ function ExploreContent() {
 
                         {/* Middle Details */}
                         <div className="p-5 space-y-3.5">
+                          {/* Studio Type / Badges */}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {house.verified ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0"/>
+                                GST Verified
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
+                                <Sparkles className="w-3 h-3 text-amber-600 shrink-0"/>
+                                Local & Indie
+                              </span>
+                            )}
+                            {house.badges && house.badges.slice(0, 2).map((b) => (
+                              <span key={b} className="text-[11px] font-medium text-zinc-600 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-full">
+                                {b}
+                              </span>
+                            ))}
+                          </div>
+
                           <div className="flex items-center justify-between gap-2">
                             <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
                               {house.availability}

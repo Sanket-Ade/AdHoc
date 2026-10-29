@@ -4,12 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from './ui/Button';
-import { Sparkles, Menu, X, Building2, UserCircle2, LogOut, ChevronDown, LogIn } from 'lucide-react';
+import { Sparkles, Menu, X, Building2, UserCircle2, LogOut, LogIn } from 'lucide-react';
 export const Navbar = () => {
     const pathname = usePathname();
-    const { role, isAuthenticated, logout, loginAsDemo } = useAuth();
+    const { role, isAuthenticated, logout } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [demoMenuOpen, setDemoMenuOpen] = useState(false);
     const navLinks = [
         { label: 'Home', shortLabel: 'Home', href: '/' },
         { label: 'Explore Production Houses', shortLabel: 'Explore', href: '/explore' },
@@ -56,34 +55,6 @@ export const Navbar = () => {
 
             {/* Action Area */}
             <div className="flex items-center gap-2 lg:gap-2.5 shrink-0">
-              {/* Quick Demo Role Switcher Dropdown */}
-              <div className="relative">
-                <button onClick={() => setDemoMenuOpen(!demoMenuOpen)} className="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 lg:py-2 rounded-xl bg-zinc-100 text-zinc-700 hover:text-zinc-900 hover:bg-zinc-200 border border-zinc-200 transition-colors cursor-pointer whitespace-nowrap" title="Preview role perspectives">
-                  <span>Demo View</span>
-                  <ChevronDown className="w-3 h-3 text-zinc-500"/>
-                </button>
-
-                {demoMenuOpen && (<div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-zinc-200 p-2 z-50 animate-in fade-in zoom-in-95" onMouseLeave={() => setDemoMenuOpen(false)}>
-                    <p className="text-[11px] font-semibold text-zinc-400 px-2 py-1 uppercase tracking-wider">
-                      Quick Role Preview
-                    </p>
-                    <button onClick={() => {
-                loginAsDemo('customer');
-                setDemoMenuOpen(false);
-            }} className="w-full text-left px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-yellow-50 hover:text-amber-900 rounded-lg transition-colors flex items-center gap-2 cursor-pointer">
-                      <UserCircle2 className="w-4 h-4 text-amber-600"/>
-                      <span>Business Demo (Sarah)</span>
-                    </button>
-                    <button onClick={() => {
-                loginAsDemo('production_house');
-                setDemoMenuOpen(false);
-            }} className="w-full text-left px-2.5 py-2 text-xs font-medium text-zinc-700 hover:bg-yellow-50 hover:text-amber-900 rounded-lg transition-colors flex items-center gap-2 cursor-pointer">
-                      <Building2 className="w-4 h-4 text-amber-600"/>
-                      <span>Production House (Studio Bombay)</span>
-                    </button>
-                  </div>)}
-              </div>
-
               {isAuthenticated ? (<div className="flex items-center gap-2">
                   <Link href={role === 'production_house'
                 ? '/dashboard/production-house'
@@ -160,26 +131,6 @@ export const Navbar = () => {
                   Login
                 </Button>
               </Link>)}
-
-            <div className="pt-2 border-t border-zinc-100">
-              <p className="text-[11px] font-semibold text-zinc-400 text-center uppercase tracking-wider mb-2">
-                Quick Demo Preview
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button onClick={() => {
-                loginAsDemo('customer');
-                setMobileMenuOpen(false);
-            }} className="text-xs text-amber-900 bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 px-2 py-2 rounded-xl font-medium transition-colors cursor-pointer text-center truncate">
-                  Demo: Business
-                </button>
-                <button onClick={() => {
-                loginAsDemo('production_house');
-                setMobileMenuOpen(false);
-            }} className="text-xs text-amber-900 bg-yellow-100 hover:bg-yellow-200 border border-yellow-300 px-2 py-2 rounded-xl font-medium transition-colors cursor-pointer text-center truncate">
-                  Demo: Studio
-                </button>
-              </div>
-            </div>
           </div>
         </div>)}
     </header>);

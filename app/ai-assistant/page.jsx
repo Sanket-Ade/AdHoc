@@ -10,7 +10,7 @@ const INITIAL_MESSAGES = [
     {
         id: 'msg-1',
         sender: 'assistant',
-        content: "Adhoc AI Assistant active. Specify your campaign category, budget, or timeline to match verified production houses.",
+        content: "Adhoc AI Assistant active. Specify your campaign category, budget, or timeline to match verified studios & talented local production houses.",
         timestamp: 'Just now',
     },
     {
@@ -146,7 +146,7 @@ export default function AIAssistantPage() {
                 botResponse = {
                     id: `bot-${Date.now()}`,
                     sender: 'assistant',
-                    content: "Brief structured and verified against studio capacity index:",
+                    content: "Brief structured and matched against studio & local creator capacity index:",
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     generatedBrief: finalBrief,
                     recommendedHouseIds: (matched.length > 0 ? matched : productionHouses).slice(0, 2).map((h) => h.id),
