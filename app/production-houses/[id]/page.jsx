@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button';
 import { RatingStars } from '@/components/ui/RatingStars';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
 import { formatINR } from '@/lib/format';
-import { MapPin, CheckCircle2, Heart, Mail, Phone, Globe, ShieldCheck, Share2, Award, ArrowLeft, Sparkles } from 'lucide-react';
+import { MapPin, CheckCircle2, Heart, Mail, Phone, Globe, ShieldCheck, ShieldAlert, Lock, Share2, Award, ArrowLeft, Sparkles } from 'lucide-react';
 function ProductionHouseProfileContent() {
     const params = useParams();
     const houseId = params?.id;
@@ -66,15 +66,15 @@ function ProductionHouseProfileContent() {
                 {house.verified ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
                     <CheckCircle2 className="w-4 h-4"/>
-                    Verified Studio
+                    Verified Genuine Studio
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-semibold border border-amber-200/90">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-600"/>
-                    Local & Independent Studio
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
+                    <ShieldAlert className="w-3.5 h-3.5 text-rose-600"/>
+                    Unverified Studio (Action Required)
                   </span>
                 )}
-                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-950 border border-yellow-300">
+                <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-200">
                   {house.availability}
                 </span>
               </div>
@@ -100,8 +100,15 @@ function ProductionHouseProfileContent() {
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <Button variant="primary" size="lg" onClick={() => setEnquiryModalOpen(true)} className="w-full sm:w-auto text-base font-semibold px-7 py-3">
-              Request Quote
+            <Button
+              variant="primary"
+              size="lg"
+              disabled={!house.verified}
+              onClick={() => setEnquiryModalOpen(true)}
+              leftIcon={!house.verified ? <Lock className="w-4 h-4" /> : undefined}
+              className={`w-full sm:w-auto text-base font-semibold px-7 py-3 ${!house.verified ? 'opacity-50 cursor-not-allowed' : ''}`}
+            >
+              {house.verified ? 'Request Quote' : 'Verification Required'}
             </Button>
           </div>
         </div>
@@ -131,12 +138,12 @@ function ProductionHouseProfileContent() {
             {/* OVERVIEW TAB */}
             {activeTab === 'overview' && (<div className="space-y-6">
                 {!house.verified && (
-                  <div className="bg-amber-50/80 border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-amber-950 shadow-xs">
-                    <Sparkles className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                  <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3 text-xs sm:text-sm text-rose-950 shadow-xs">
+                    <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                     <div className="space-y-0.5">
-                      <p className="font-bold text-amber-950">Local & Independent Studio Profile</p>
-                      <p className="text-zinc-600 leading-relaxed">
-                        Verification is not mandatory on Adhoc. We actively support unregistered local production houses and boutique filmmakers whose creative work and portfolio speak for themselves.
+                      <p className="font-bold text-rose-950">Mandatory Document Verification Pending</p>
+                      <p className="text-rose-700 leading-relaxed font-normal">
+                        This production house has not yet submitted genuine business documents (GSTIN or Udyam Certificate). To safeguard client budgets and guarantee delivery, commercial quoting and briefs are temporarily locked for this profile.
                       </p>
                     </div>
                   </div>
@@ -420,15 +427,31 @@ function ProductionHouseProfileContent() {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-zinc-500">Studio Status:</span>
-                  <span className="font-semibold text-emerald-700 flex items-center gap-1.5">
-                    <ShieldCheck className="w-4 h-4 text-emerald-600"/>
-                    Verified & Insured
+                  <span className="font-semibold text-zinc-800 flex items-center gap-1.5">
+                    {house.verified ? (
+                      <>
+                        <ShieldCheck className="w-4 h-4 text-emerald-600"/>
+                        <span className="text-emerald-700">Verified & Genuine</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShieldAlert className="w-4 h-4 text-rose-600"/>
+                        <span className="text-rose-700">Unverified</span>
+                      </>
+                    )}
                   </span>
                 </div>
               </div>
 
-              <Button variant="primary" size="lg" onClick={() => setEnquiryModalOpen(true)} className="w-full text-base font-semibold py-3">
-                Send Enquiry
+              <Button
+                variant="primary"
+                size="lg"
+                disabled={!house.verified}
+                onClick={() => setEnquiryModalOpen(true)}
+                leftIcon={!house.verified ? <Lock className="w-4 h-4" /> : undefined}
+                className={`w-full text-base font-semibold py-3 ${!house.verified ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {house.verified ? 'Send Enquiry' : 'Studio Unverified'}
               </Button>
 
               <p className="text-xs text-zinc-500 text-center">

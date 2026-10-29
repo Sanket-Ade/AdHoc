@@ -154,15 +154,17 @@ export const AuthProvider = ({ children }) => {
                 name: studioName,
                 slug: studioName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
                 tagline: 'Independent Commercial & Creative Video Studio',
-                description: `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft high-quality commercial films, branded video, and social campaigns. Verification is optional on Adhoc — our portfolio speaks for our craft.`,
+                description: `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft commercial films, branded video, and social campaigns. Document verification (GST or Udyam Certificate) is required to operate.`,
                 logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80',
                 coverImageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1400&auto=format&fit=crop&q=80',
                 location: studioLocation,
                 city: studioCity,
                 country: 'India',
-                verified: false, // NOT mandatory! Unregistered / local studios can freely build a profile
+                verified: false, // Mandatory verification required before operations are enabled
                 gstRegistered: false,
-                studioType: 'Independent / Local Studio',
+                verificationStatus: 'unverified',
+                verificationDocument: null,
+                studioType: 'Commercial Production House',
                 rating: 5.0,
                 reviewCount: 0,
                 yearsInBusiness: 1,
@@ -484,6 +486,70 @@ export const AuthProvider = ({ children }) => {
         });
         showToast('Portfolio item removed.');
     };
+    const verifyStudioDocuments = (houseId, documentData) => {
+        let verifiedName = '';
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    verifiedName = h.name;
+                    const isGst = documentData.docType === 'gst';
+                    const docLabel = isGst ? 'GST Verified' : 'Udyam MSME Verified';
+                    const newBadges = Array.from(new Set([
+                        docLabel,
+                        'Genuine Document Verified',
+                        ...h.badges.filter((b) => b !== 'Local Indie Studio' && b !== 'GST Verified' && b !== 'Udyam MSME Verified')
+                    ]));
+                    return {
+                        ...h,
+                        verified: true,
+                        gstRegistered: isGst,
+                        udyamRegistered: !isGst,
+                        verificationStatus: 'verified',
+                        verificationDocument: {
+                            docType: documentData.docType, // 'gst' | 'udyam'
+                            docNumber: documentData.docNumber,
+                            legalName: documentData.legalName || h.name,
+                            signatoryName: documentData.signatoryName || 'Authorized Signatory',
+                            panNumber: documentData.panNumber || (documentData.docNumber?.length >= 10 ? documentData.docNumber.slice(2, 12) : 'AABCP1234M'),
+                            fileName: documentData.fileName || (isGst ? 'gst_certificate.pdf' : 'udyam_registration_certificate.pdf'),
+                            fileSize: documentData.fileSize || '1.8 MB',
+                            submittedAt: new Date().toISOString(),
+                            verifiedAt: new Date().toISOString(),
+                            statusMessage: 'Verified & Confirmed Genuine Record'
+                        },
+                        badges: newBadges,
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast(`Verification Approved! ${verifiedName || 'Studio'} is verified genuine. All operations are now unlocked.`, 'success');
+    };
+
+    const revokeVerification = (houseId, reason = 'Document requires re-verification') => {
+        setProductionHouses((prev) => {
+            const updated = prev.map((h) => {
+                if (h.id === houseId) {
+                    return {
+                        ...h,
+                        verified: false,
+                        gstRegistered: false,
+                        udyamRegistered: false,
+                        verificationStatus: 'unverified',
+                        verificationDocument: null,
+                        badges: h.badges.filter((b) => b !== 'GST Verified' && b !== 'Udyam MSME Verified' && b !== 'Genuine Document Verified')
+                    };
+                }
+                return h;
+            });
+            localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+            return updated;
+        });
+        showToast(`Verification revoked: ${reason}. Studio locked.`, 'error');
+    };
+
     const toggleVerification = (houseId) => {
         let isNowVerified = false;
         setProductionHouses((prev) => {
@@ -491,15 +557,23 @@ export const AuthProvider = ({ children }) => {
                 if (h.id === houseId) {
                     isNowVerified = !h.verified;
                     const badges = isNowVerified
-                        ? Array.from(new Set(['GST Verified', ...h.badges.filter((b) => b !== 'Local Indie Studio')]))
-                        : h.badges.filter((b) => b !== 'GST Verified');
-                    if (!isNowVerified && !badges.includes('Local Indie Studio')) {
-                        badges.push('Local Indie Studio');
-                    }
+                        ? Array.from(new Set(['GST Verified', 'Genuine Document Verified', ...h.badges.filter((b) => b !== 'Local Indie Studio')]))
+                        : h.badges.filter((b) => b !== 'GST Verified' && b !== 'Genuine Document Verified');
                     return {
                         ...h,
                         verified: isNowVerified,
                         gstRegistered: isNowVerified,
+                        verificationStatus: isNowVerified ? 'verified' : 'unverified',
+                        verificationDocument: isNowVerified ? {
+                            docType: 'gst',
+                            docNumber: '27AAACP0123M1ZT',
+                            legalName: h.name,
+                            signatoryName: 'Authorized Signatory',
+                            fileName: 'gst_certificate_verified.pdf',
+                            fileSize: '1.5 MB',
+                            verifiedAt: new Date().toISOString(),
+                            statusMessage: 'Verified & Confirmed Genuine Record'
+                        } : null,
                         badges,
                     };
                 }
@@ -508,7 +582,7 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
             return updated;
         });
-        showToast(isNowVerified ? 'Studio verification badge enabled!' : 'Studio switched to independent/local status (Verification is optional).');
+        showToast(isNowVerified ? 'Studio verified genuine! All features unlocked.' : 'Studio unverified. Actions are locked until verified.', isNowVerified ? 'success' : 'error');
     };
     const requestVerification = (houseId, details = {}) => {
         setProductionHouses((prev) => {
@@ -587,6 +661,8 @@ export const AuthProvider = ({ children }) => {
             addPortfolioItem,
             deletePortfolioItem,
             toggleVerification,
+            verifyStudioDocuments,
+            revokeVerification,
             requestVerification,
             addService,
             deleteService,

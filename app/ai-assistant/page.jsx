@@ -98,7 +98,7 @@ export default function AIAssistantPage() {
                     content: "Specify your planned production budget tier:",
                     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                     quickReplies: [
-                        'Under ₹2,00,000 (Social & Digital Ads)',
+                        '₹50,000 – ₹2,00,000 (Social & Digital Ads)',
                         '₹2,00,000 – ₹8,00,000 (Digital Video & Mid-Tier Shoot)',
                         '₹8,00,000 – ₹25,00,000 (Commercial Film / OTT)',
                         '₹25,00,000+ (High-Impact Broadcast TVC)',

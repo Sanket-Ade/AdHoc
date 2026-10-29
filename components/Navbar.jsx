@@ -11,8 +11,8 @@ export const Navbar = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navLinks = [
         { label: 'Home', shortLabel: 'Home', href: '/' },
-        { label: 'Explore Production Houses', shortLabel: 'Explore', href: '/explore' },
-        { label: 'How It Works', shortLabel: 'How It Works', href: '/#how-it-works' },
+        { label: 'Explore Studios', shortLabel: 'Explore', href: '/explore' },
+        { label: 'AI Assistant', shortLabel: 'AI Assistant', href: '/ai-assistant' },
     ];
     return (<header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-zinc-200/80 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -5,10 +5,10 @@ import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { useAuth } from '@/context/AuthContext';
 import { POPULAR_CATEGORIES } from '@/lib/mock-data';
-import { Send, CheckCircle2, Clock, MessageSquare } from 'lucide-react';
+import { Send, CheckCircle2, Clock, MessageSquare, ShieldAlert, Lock } from 'lucide-react';
 import { EnquiryChatModal } from './EnquiryChatModal';
 import Link from 'next/link';
-export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCategory, initialTitle = '', initialDescription = '', initialBudget = '₹5,00,000 - ₹15,00,000', }) => {
+export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCategory, initialTitle = '', initialDescription = '', initialBudget = '₹50,000 - ₹2,00,000', }) => {
     const { user, addEnquiry } = useAuth();
     const [title, setTitle] = useState(initialTitle);
     const [category, setCategory] = useState(initialCategory || productionHouse?.services[0]?.name || 'Video Production');
@@ -131,13 +131,31 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
           <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
             <img src={productionHouse.logoUrl} alt={productionHouse.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-200 shrink-0"/>
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-bold text-zinc-900 truncate">{productionHouse.name}</h4>
+              <div className="flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-zinc-900 truncate">{productionHouse.name}</h4>
+                {productionHouse.verified && (
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" title="GST/Udyam Verified Studio" />
+                )}
+              </div>
               <p className="text-xs text-zinc-500 flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-600"/>
+                <Clock className="w-3.5 h-3.5 text-zinc-400"/>
                 Response: ~{productionHouse.responseRateHours}h • {productionHouse.location}
               </p>
             </div>
           </div>
+
+          {/* Unverified Studio Warning */}
+          {!productionHouse.verified && (
+            <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-900 space-y-1">
+              <div className="flex items-center gap-2 font-bold text-rose-950">
+                <ShieldAlert className="w-4 h-4 text-rose-600" />
+                <span>Verification Incomplete — Direct Intake Paused</span>
+              </div>
+              <p className="text-rose-700 leading-relaxed font-normal">
+                This studio has not yet completed mandatory document verification (GST or Udyam Certificate). Project enquiry submissions are disabled until genuine business credentials are confirmed.
+              </p>
+            </div>
+          )}
 
           <Input label="Project Title" required placeholder="e.g. 30s Brand Commercial for Summer Launch" value={title} onChange={(e) => setTitle(e.target.value)}/>
 
@@ -158,7 +176,7 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
                 Estimated Budget Range
               </label>
               <select value={budgetRange} onChange={(e) => setBudgetRange(e.target.value)} className="w-full bg-white text-zinc-900 text-sm rounded-xl border border-zinc-200 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-200 px-3.5 py-2.5 outline-none cursor-pointer">
-                <option value="Under ₹1,00,000" className="bg-white text-zinc-900">Under ₹1,00,000 (Social / Digital Ads)</option>
+                <option value="₹50,000 - ₹1,00,000" className="bg-white text-zinc-900">₹50,000 - ₹1,00,000 (Starter / Social & Digital Ads)</option>
                 <option value="₹1,00,000 - ₹5,00,000" className="bg-white text-zinc-900">₹1,00,000 - ₹5,00,000 (Mid-tier Shoot / Digital Video)</option>
                 <option value="₹5,00,000 - ₹15,00,000" className="bg-white text-zinc-900">₹5,00,000 - ₹15,00,000 (Digital Ad Film / Brand)</option>
                 <option value="₹15,00,000 - ₹35,00,000" className="bg-white text-zinc-900">₹15,00,000 - ₹35,00,000 (Broadcast TVC / Digital Campaign)</option>
@@ -193,8 +211,14 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
             <Button variant="ghost" type="button" onClick={handleResetAndClose}>
               Cancel
             </Button>
-            <Button variant="primary" type="submit" isLoading={isSubmitting} leftIcon={<Send className="w-4 h-4"/>}>
-              Submit Project Enquiry
+            <Button
+              variant="primary"
+              type="submit"
+              disabled={!productionHouse.verified || isSubmitting}
+              isLoading={isSubmitting}
+              leftIcon={productionHouse.verified ? <Send className="w-4 h-4"/> : <Lock className="w-4 h-4" />}
+            >
+              {productionHouse.verified ? 'Submit Project Enquiry' : 'Studio Unverified'}
             </Button>
           </div>
         </form>)}

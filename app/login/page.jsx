@@ -111,31 +111,22 @@ export function AuthForm({ initialMode }) {
         }
     };
     return (
-      <div
-        className="relative min-h-screen py-10 sm:py-16 flex items-center justify-center px-4 bg-cover  bg-center bg-no-repeat text-zinc-900 overflow-x-hidden"
-        style={{ backgroundImage: "url('/login-bg.png')",
-          backgroundPosition: "900px -200px"
-         }}
-      >
-        {/* Subtle dark backdrop overlay to ensure crisp contrast and readability */}
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] pointer-events-none" />
-
-        <div className="relative z-10 w-full max-w-md space-y-6">
+      <div className="min-h-screen py-12 sm:py-16 flex items-center justify-center px-4 bg-[#FAFAFA] text-zinc-900">
+        <div className="w-full max-w-md space-y-6">
           {/* Brand Header */}
-          <div className="text-center space-y-2">
-            
-            <h1 className="text-3xl font-extrabold text-white tracking-tight drop-shadow-sm">
-              {mode === 'login' ? 'Login' : 'Create Account'}
+          <div className="text-center space-y-1.5">
+            <h1 className="text-2xl sm:text-3xl font-black text-zinc-900 tracking-tight">
+              {mode === 'login' ? 'Sign In' : 'Create Account'}
             </h1>
-            <p className="text-xs text-zinc-200 max-w-xs mx-auto drop-shadow-xs font-medium">
+            <p className="text-xs text-zinc-500 max-w-xs mx-auto font-normal">
               {mode === 'login'
-              ? `Sign in to your ${role === 'customer' ? 'Business' : 'Production House'} account`
+              ? `Access your ${role === 'customer' ? 'Business' : 'Production House'} account`
               : `Join as a ${role === 'customer' ? 'Business to commission work' : 'Production House to receive briefs'}`}
             </p>
           </div>
 
           {/* Card */}
-          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 sm:p-7 border border-white/60 shadow-2xl space-y-5 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/90 shadow-soft space-y-5 animate-in fade-in duration-200">
           
           {/* Role Selector Tabs (Business vs Production House) */}
           <div>
@@ -171,14 +162,14 @@ export function AuthForm({ initialMode }) {
             </div>
           </div>
 
-          {/* Verification is Optional Notice for Production Houses */}
+          {/* Mandatory Document Verification Notice for Production Houses */}
           {role === 'production_house' && (
-            <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/80 text-[11px] text-amber-950 flex items-start gap-2.5">
-              <Sparkles className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-950 flex items-start gap-2.5">
+              <ShieldCheck className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <p className="font-bold">Verification is completely optional</p>
-                <p className="text-zinc-600 leading-relaxed">
-                  Local production houses and independent creators that are not registered yet can build a full profile, showcase their best work, and win client briefs.
+                <p className="font-bold text-rose-900">Document verification is mandatory</p>
+                <p className="text-rose-700 leading-relaxed text-[11px]">
+                  To confirm genuine business credentials, every production house must verify with a valid GST or Udyam Certificate. Without verification, you cannot send quotes, message clients, or receive bookings.
                 </p>
               </div>
             </div>
@@ -327,9 +318,9 @@ export function AuthForm({ initialMode }) {
         </div>
 
         {/* Security Footer Note */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-zinc-300 drop-shadow-xs">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400"/>
-          <span>Encrypted production credentials • Zero spam</span>
+        <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-400">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600"/>
+          <span>Encrypted authentication • Verified production marketplace</span>
         </div>
       </div>
     </div>);

@@ -20,7 +20,8 @@ import {
   Film,
   X,
   Bot,
-  Trash2
+  Trash2,
+  Lock,
 } from 'lucide-react';
 
 export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
@@ -36,6 +37,7 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
 
   // Determine current user's perspective
   const isStudioUser = user?.role === 'production_house';
+  const isStudioVerified = Boolean(studio?.verified);
   const otherPartyName = isStudioUser
     ? enquiry?.customerName || 'Business Client'
     : enquiry?.productionHouseName || 'Production House';
@@ -92,17 +94,17 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
   // Quick suggestion chips based on who is typing
   const quickSuggestions = isStudioUser
     ? [
-        'We reviewed your creative brief!',
-        'What is your target shoot window?',
-        'We can schedule a recce this week.',
-        'Camera package & crew are confirmed.',
-      ]
+      'We reviewed your creative brief!',
+      'What is your target shoot window?',
+      'We can schedule a recce this week.',
+      'Camera package & crew are confirmed.',
+    ]
     : [
-        'When is the earliest recce possible?',
-        'Does the quote include 9:16 cuts?',
-        'Can you share director references?',
-        'We have brand guidelines ready.',
-      ];
+      'When is the earliest recce possible?',
+      'Does the quote include 9:16 cuts?',
+      'Can you share director references?',
+      'We have brand guidelines ready.',
+    ];
 
   const formatTime = (isoString) => {
     if (!isoString) return '';
@@ -124,7 +126,7 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
 
       {/* Main Chat Dialog Box */}
       <div className="relative w-full max-w-3xl bg-white text-zinc-900 rounded-3xl shadow-2xl border border-zinc-200 z-10 flex flex-col h-[90vh] max-h-[820px] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        
+
         {/* ========================================================================= */}
         {/* 1. CHAT HEADER                                                           */}
         {/* ========================================================================= */}
@@ -156,14 +158,14 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
                   {isStudioUser ? 'Client' : 'Studio'}
                 </span>
               </div>
-              
+
             </div>
           </div>
 
           {/* Project Title & Close button */}
           <div className="flex items-center gap-3">
             <div className="hidden sm:flex flex-col items-end text-right">
-              
+
               <div className="flex items-center gap-1.5 mt-0.5">
                 <EnquiryStatusBadge status={enquiry.status} />
               </div>
@@ -205,7 +207,7 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
             </span>
           </div>
 
-        
+
         </div>
 
         {/* ========================================================================= */}
@@ -258,22 +260,20 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
 
                 {/* Message Bubble */}
                 <div
-                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-sm leading-relaxed shadow-soft transition-all ${
-                    isMe
+                  className={`max-w-[85%] sm:max-w-[75%] rounded-2xl p-4 text-sm leading-relaxed shadow-soft transition-all ${isMe
                       ? 'bg-zinc-900 text-white rounded-tr-xs'
                       : 'bg-white text-zinc-900 border border-zinc-200/90 rounded-tl-xs'
-                  }`}
+                    }`}
                 >
                   <p className="whitespace-pre-wrap font-normal">{msg.content}</p>
 
                   {/* Attachment Pill if present */}
                   {msg.attachment && (
                     <div
-                      className={`mt-2.5 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold ${
-                        isMe
+                      className={`mt-2.5 p-2.5 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold ${isMe
                           ? 'bg-zinc-800 border-zinc-700 text-zinc-200'
                           : 'bg-zinc-50 border-zinc-200 text-zinc-800'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center gap-2">
                         <FileText className={`w-4 h-4 ${isMe ? 'text-amber-400' : 'text-amber-600'}`} />
@@ -293,21 +293,23 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
         {/* ========================================================================= */}
         {/* 3. QUICK SUGGESTION CHIPS                                                */}
         {/* ========================================================================= */}
-        <div className="px-5 py-2.5 bg-white border-t border-zinc-100 flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
-          <span className="text-[11px] uppercase font-bold text-zinc-400 shrink-0 flex items-center gap-1">
-            <Sparkles className="w-3 h-3 text-amber-500" /> Quick Replies:
-          </span>
-          {quickSuggestions.map((suggestion) => (
-            <button
-              key={suggestion}
-              type="button"
-              onClick={() => handleQuickReply(suggestion)}
-              className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 hover:bg-yellow-100 text-zinc-700 hover:text-amber-950 border border-zinc-200/80 transition-colors whitespace-nowrap cursor-pointer shrink-0"
-            >
-              {suggestion}
-            </button>
-          ))}
-        </div>
+        {(!isStudioUser || isStudioVerified) && (
+          <div className="px-5 py-2.5 bg-white border-t border-zinc-100 flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
+            <span className="text-[11px] uppercase font-bold text-zinc-400 shrink-0 flex items-center gap-1">
+              <Sparkles className="w-3 h-3 text-amber-500" /> Quick Replies:
+            </span>
+            {quickSuggestions.map((suggestion) => (
+              <button
+                key={suggestion}
+                type="button"
+                onClick={() => handleQuickReply(suggestion)}
+                className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 hover:bg-yellow-100 text-zinc-700 hover:text-amber-950 border border-zinc-200/80 transition-colors whitespace-nowrap cursor-pointer shrink-0"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* ========================================================================= */}
         {/* 4. CHAT INPUT BAR                                                        */}
@@ -331,42 +333,48 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
             </div>
           )}
 
-          <form onSubmit={handleSend} className="flex items-center gap-2">
-            {/* Attachment Button */}
-            <button
-              type="button"
-              onClick={handleAddSampleAttachment}
-              className={`p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 ${
-                attachedFile
-                  ? 'bg-amber-100 text-amber-900 border-amber-300'
-                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 border-zinc-200'
-              }`}
-              title="Attach moodboard or treatment deck"
-            >
-              <Paperclip className="w-4 h-4" />
-            </button>
+          {isStudioUser && !isStudioVerified ? (
+            <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+              <Lock className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>Document verification (GST or Udyam Certificate) is strictly required before messaging clients. Please verify your credentials in your studio dashboard.</span>
+            </div>
+          ) : (
+            <form onSubmit={handleSend} className="flex items-center gap-2">
+              {/* Attachment Button */}
+              <button
+                type="button"
+                onClick={handleAddSampleAttachment}
+                className={`p-2.5 rounded-xl border transition-colors cursor-pointer shrink-0 ${attachedFile
+                    ? 'bg-amber-100 text-amber-900 border-amber-300'
+                    : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-500 hover:text-zinc-800 border-zinc-200'
+                  }`}
+                title="Attach moodboard or treatment deck"
+              >
+                <Paperclip className="w-4 h-4" />
+              </button>
 
-            {/* Input field */}
-            <input
-              type="text"
-              placeholder={`Write a message to ${otherPartyName}...`}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              className="flex-1 bg-zinc-50 hover:bg-zinc-100/70 focus:bg-white text-sm text-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-amber-400 transition-colors placeholder:text-zinc-400"
-            />
+              {/* Input field */}
+              <input
+                type="text"
+                placeholder={`Write a message to ${otherPartyName}...`}
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                className="flex-1 bg-zinc-50 hover:bg-zinc-100/70 focus:bg-white text-sm text-zinc-900 px-4 py-2.5 rounded-xl border border-zinc-200 outline-none focus:border-amber-400 transition-colors placeholder:text-zinc-400"
+              />
 
-            {/* Send Button */}
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              disabled={!inputText.trim() && !attachedFile}
-              rightIcon={<Send className="w-4 h-4" />}
-              className="font-bold text-sm px-5 py-2.5 shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
-            >
-              Send
-            </Button>
-          </form>
+              {/* Send Button */}
+              <Button
+                type="submit"
+                variant="primary"
+                size="md"
+                disabled={!inputText.trim() && !attachedFile}
+                rightIcon={<Send className="w-4 h-4" />}
+                className="font-bold text-sm px-5 py-2.5 shadow-xs shrink-0 cursor-pointer disabled:opacity-50"
+              >
+                Send
+              </Button>
+            </form>
+          )}
         </div>
       </div>
     </div>

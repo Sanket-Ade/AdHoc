@@ -71,9 +71,9 @@ function ExploreContent() {
                     return false;
                 }
             }
-            // Budget tier filter
+            // Budget tier filter (Starting from ₹50,000)
             if (selectedBudget !== 'all') {
-                if (selectedBudget === 'under1l' && house.minBudget > 100000)
+                if (selectedBudget === '50k-1l' && (house.minBudget < 50000 || house.minBudget > 100000))
                     return false;
                 if (selectedBudget === '1l-5l' && (house.minBudget < 100000 || house.minBudget > 500000))
                     return false;
@@ -136,45 +136,39 @@ function ExploreContent() {
         setVerificationFilter('all');
     };
     return (
-    <div
-      className="relative min-h-screen py-8 sm:py-12 border-b border-zinc-800/20 bg-cover bg-center bg-no-repeat overflow-hidden"
-      style={{ backgroundImage: `url('/bg-production-house-directory.png')` }}
-    >
-      {/* Dark gradient overlay: enhances contrast while preserving rich background tones */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/50 to-black/70 pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div className="relative min-h-screen py-8 sm:py-12 bg-[#FAFAFA] text-zinc-900 border-b border-zinc-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Breadcrumbs, Eyebrow & Title */}
-        <div className="mb-8 space-y-2.5">
-          <div className="flex items-center gap-2 text-sm text-zinc-300">
-            <Link href="/" className="hover:text-yellow-300 transition-colors">Home</Link>
-            <span className="text-zinc-500">/</span>
-            <span className="text-yellow-300 font-semibold">Explore Studios</span>
+        <div className="mb-8 space-y-2">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-zinc-500">
+            <Link href="/" className="hover:text-zinc-900 transition-colors">Home</Link>
+            <span>/</span>
+            <span className="text-zinc-900 font-medium">Directory</span>
           </div>
 
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-yellow-300 text-zinc-950 text-xs font-bold border border-yellow-400 shadow-sm">
-            <ShieldCheck className="w-3.5 h-3.5 text-zinc-950"/>
-            <span>Commercial Studios & Independent Local Creators</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-100 text-zinc-800 text-xs font-semibold border border-zinc-200">
+            <ShieldCheck className="w-3.5 h-3.5 text-zinc-700"/>
+            <span>Verified & Independent Studios • Budgets from ₹50,000</span>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight drop-shadow-md">
-            Production House Directory
+          <h1 className="text-3xl sm:text-4xl font-black text-zinc-900 tracking-tight">
+            Production Studios
           </h1>
-          <p className="text-base sm:text-lg text-zinc-200 mt-1 max-w-2xl font-medium drop-shadow-xs leading-relaxed">
-            Discover top verified commercial facilities and exceptional local independent production houses across India. Compare rate cards, creative reels, and camera packages.
+          <p className="text-sm sm:text-base text-zinc-600 max-w-2xl font-normal leading-relaxed">
+            Direct access to commercial studios and boutique creators across India. Compare transparent rate cards, technical specs, and verified portfolios.
           </p>
         </div>
 
         {/* Top Control Bar: Search + Sorting */}
-        <div className="bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-white/60 shadow-xl mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+        <div className="bg-white p-3 rounded-2xl border border-zinc-200/90 shadow-soft mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
           <div className="flex-1 relative">
-            <Search className="w-4 h-4 text-amber-600 absolute left-3.5 top-1/2 -translate-y-1/2"/>
+            <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2"/>
             <input
               type="text"
               placeholder="Search by studio, camera, capability, or client..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white text-sm text-zinc-900 placeholder-zinc-400 pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-400/20 outline-none transition-all shadow-xs"
+              className="w-full bg-zinc-50 hover:bg-white focus:bg-white text-sm text-zinc-900 placeholder-zinc-400 pl-10 pr-4 py-2.5 rounded-xl border border-zinc-200 focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900 outline-none transition-all shadow-xs"
             />
             {searchQuery && (
               <button
@@ -192,14 +186,14 @@ function ExploreContent() {
               onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
               className="lg:hidden flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-sm font-semibold border border-zinc-200 cursor-pointer transition-colors"
             >
-              <SlidersHorizontal className="w-4 h-4 text-amber-700"/>
+              <SlidersHorizontal className="w-4 h-4 text-zinc-700"/>
               <span>Filters {activeFilterCount > 0 && `(${activeFilterCount})`}</span>
             </button>
 
             {/* Sort Dropdown */}
-            <div className="flex items-center gap-2 text-sm font-semibold text-zinc-800 bg-zinc-100/90 px-3.5 py-2.5 rounded-xl border border-zinc-200 shadow-xs">
-              <ArrowUpDown className="w-3.5 h-3.5 text-amber-600"/>
-              <span className="hidden sm:inline text-zinc-500 font-medium">Sort:</span>
+            <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 bg-zinc-50 px-3.5 py-2.5 rounded-xl border border-zinc-200 shadow-xs">
+              <ArrowUpDown className="w-3.5 h-3.5 text-zinc-500"/>
+              <span className="hidden sm:inline text-zinc-500 text-xs uppercase tracking-wider font-semibold">Sort:</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -215,51 +209,51 @@ function ExploreContent() {
 
         {/* Active Filter Chips Bar */}
         {activeFilterCount > 0 && (
-          <div className="flex flex-wrap items-center gap-2 mb-6 p-2.5 rounded-xl bg-black/40 backdrop-blur-md border border-white/15 animate-in fade-in">
-            <span className="text-xs font-bold uppercase tracking-wider text-yellow-300 ml-1">
+          <div className="flex flex-wrap items-center gap-2 mb-6 p-2 rounded-xl bg-white border border-zinc-200/80 shadow-xs">
+            <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500 ml-1">
               Active Filters:
             </span>
             {verificationFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
-                {verificationFilter === 'verified' ? 'GST Verified Only' : 'Local & Indie Studios'}
-                <button onClick={() => setVerificationFilter('all')} className="hover:text-rose-700 cursor-pointer">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
+                {verificationFilter === 'verified' ? 'GST Verified' : 'Local & Indie'}
+                <button onClick={() => setVerificationFilter('all')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               </span>
             )}
             {selectedCategory && selectedCategory !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
-                Category: {selectedCategory}
-                <button onClick={() => setSelectedCategory('')} className="hover:text-rose-700 cursor-pointer">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
+                {selectedCategory}
+                <button onClick={() => setSelectedCategory('')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               </span>
             )}
             {selectedLocation && selectedLocation !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
-                Location: {selectedLocation}
-                <button onClick={() => setSelectedLocation('')} className="hover:text-rose-700 cursor-pointer">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
+                {selectedLocation}
+                <button onClick={() => setSelectedLocation('')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               </span>
             )}
             {selectedBudget !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
-                Budget: {selectedBudget}
-                <button onClick={() => setSelectedBudget('all')} className="hover:text-rose-700 cursor-pointer">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
+                Budget: {selectedBudget === '50k-1l' ? '₹50k – ₹1L' : selectedBudget}
+                <button onClick={() => setSelectedBudget('all')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               </span>
             )}
             {availability !== 'all' && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-yellow-300 text-zinc-950 border border-yellow-400 shadow-xs">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
                 {availability}
-                <button onClick={() => setAvailability('all')} className="hover:text-rose-700 cursor-pointer">
+                <button onClick={() => setAvailability('all')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
               </span>
             )}
-            <button onClick={clearAllFilters} className="text-xs font-bold text-yellow-300 hover:text-yellow-200 hover:underline ml-2 cursor-pointer">
+            <button onClick={clearAllFilters} className="text-xs font-semibold text-zinc-600 hover:text-zinc-950 underline ml-2 cursor-pointer">
               Reset all
             </button>
           </div>
@@ -269,7 +263,7 @@ function ExploreContent() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* FILTER SIDEBAR (Desktop & Mobile Drawer) */}
           <aside
-            className={`lg:col-span-3 bg-white/95 backdrop-blur-md rounded-3xl border border-white/60 p-5 shadow-xl space-y-6 lg:block ${
+            className={`lg:col-span-3 bg-white rounded-2xl border border-zinc-200/90 p-5 shadow-soft space-y-6 lg:block ${
               mobileFilterOpen ? 'block fixed inset-4 z-50 overflow-y-auto max-h-[90vh] bg-white shadow-2xl' : 'hidden'
             }`}
           >
@@ -400,24 +394,24 @@ function ExploreContent() {
                 Minimum Budget (₹ INR)
               </label>
               <div className="space-y-1 text-sm text-zinc-700">
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="budget" checked={selectedBudget === 'all'} onChange={() => setSelectedBudget('all')} className="accent-amber-500 w-4 h-4"/>
-                  <span className="font-medium">All Budgets</span>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="budget" checked={selectedBudget === 'all'} onChange={() => setSelectedBudget('all')} className="accent-zinc-900 w-4 h-4"/>
+                  <span className="font-medium">All Budgets (From ₹50,000)</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="budget" checked={selectedBudget === 'under1l'} onChange={() => setSelectedBudget('under1l')} className="accent-amber-500 w-4 h-4"/>
-                  <span className="font-medium">Under ₹1 Lakh</span>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="budget" checked={selectedBudget === '50k-1l'} onChange={() => setSelectedBudget('50k-1l')} className="accent-zinc-900 w-4 h-4"/>
+                  <span className="font-medium">₹50,000 – ₹1 Lakh</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="budget" checked={selectedBudget === '1l-5l'} onChange={() => setSelectedBudget('1l-5l')} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="budget" checked={selectedBudget === '1l-5l'} onChange={() => setSelectedBudget('1l-5l')} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">₹1 Lakh – ₹5 Lakh</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="budget" checked={selectedBudget === '5l-20l'} onChange={() => setSelectedBudget('5l-20l')} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="budget" checked={selectedBudget === '5l-20l'} onChange={() => setSelectedBudget('5l-20l')} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">₹5 Lakh – ₹20 Lakh</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="budget" checked={selectedBudget === '20l+'} onChange={() => setSelectedBudget('20l+')} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="budget" checked={selectedBudget === '20l+'} onChange={() => setSelectedBudget('20l+')} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">₹20 Lakh+</span>
                 </label>
               </div>
@@ -429,16 +423,16 @@ function ExploreContent() {
                 Industry Experience
               </label>
               <div className="space-y-1 text-sm text-zinc-700">
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="experience" checked={minExperience === 0} onChange={() => setMinExperience(0)} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="experience" checked={minExperience === 0} onChange={() => setMinExperience(0)} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">Any Experience</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="experience" checked={minExperience === 5} onChange={() => setMinExperience(5)} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="experience" checked={minExperience === 5} onChange={() => setMinExperience(5)} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">5+ Years Established</span>
                 </label>
-                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
-                  <input type="radio" name="experience" checked={minExperience === 10} onChange={() => setMinExperience(10)} className="accent-amber-500 w-4 h-4"/>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-zinc-50 cursor-pointer transition-colors">
+                  <input type="radio" name="experience" checked={minExperience === 10} onChange={() => setMinExperience(10)} className="accent-zinc-900 w-4 h-4"/>
                   <span className="font-medium">10+ Years Veteran</span>
                 </label>
               </div>
@@ -452,7 +446,7 @@ function ExploreContent() {
               <select
                 value={availability}
                 onChange={(e) => setAvailability(e.target.value)}
-                className="w-full bg-white text-sm font-medium text-zinc-900 rounded-xl border border-zinc-200 p-2.5 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-400/20 cursor-pointer shadow-xs"
+                className="w-full bg-zinc-50 text-sm font-medium text-zinc-900 rounded-xl border border-zinc-200 p-2.5 outline-none focus:border-zinc-900 cursor-pointer shadow-xs"
               >
                 <option value="all">Any Availability</option>
                 <option value="Available Now">Available Now</option>
@@ -471,25 +465,25 @@ function ExploreContent() {
           {/* MAIN RESULTS GRID */}
           <div className="lg:col-span-9 space-y-6">
             {/* Results count label */}
-            <div className="flex items-center justify-between text-sm text-zinc-200">
+            <div className="flex items-center justify-between text-xs sm:text-sm text-zinc-500">
               <p>
                 Showing{' '}
-                <strong className="text-yellow-300 font-bold">
+                <strong className="text-zinc-900 font-bold">
                   {Math.min(visibleCount, filteredHouses.length)}
                 </strong>{' '}
-                of <strong className="text-yellow-300 font-bold">{filteredHouses.length}</strong>{' '}
+                of <strong className="text-zinc-900 font-bold">{filteredHouses.length}</strong>{' '}
                 studios
               </p>
               {filteredHouses.length > 0 && (
-                <span className="text-xs bg-emerald-500/20 text-emerald-300 px-3 py-1 rounded-full border border-emerald-500/40 font-semibold backdrop-blur-xs">
-                  Verified & Curated Studios
+                <span className="text-xs bg-zinc-100 text-zinc-700 px-3 py-1 rounded-full border border-zinc-200 font-medium">
+                  Direct Studio Rate Cards
                 </span>
               )}
             </div>
 
             {/* Empty State */}
             {filteredHouses.length === 0 ? (
-              <div className="bg-white/95 backdrop-blur-md rounded-3xl border border-white/60 p-8 shadow-xl">
+              <div className="bg-white rounded-2xl border border-zinc-200/90 p-8 shadow-soft">
                 <EmptyState icon={Building2} title="No Production Houses Found" description="No studios match your exact filters. Try broadening the location or budget range." actionText="Reset All Filters" onAction={clearAllFilters}/>
               </div>
             ) : (
@@ -499,7 +493,7 @@ function ExploreContent() {
                   return (
                     <div
                       key={house.id}
-                      className="bg-white/95 backdrop-blur-md rounded-3xl border border-white/60 shadow-lg hover:shadow-2xl hover:border-yellow-400/90 hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between overflow-hidden group"
+                      className="bg-white rounded-2xl border border-zinc-200/90 shadow-soft hover:shadow-md hover:border-zinc-300 transition-all flex flex-col justify-between overflow-hidden group"
                     >
                       <div>
                         {/* Top Header with logo & name */}
@@ -509,11 +503,11 @@ function ExploreContent() {
                               <img
                                 src={house.logoUrl}
                                 alt={house.name}
-                                className="w-12 h-12 rounded-xl object-cover border border-zinc-200/90 shadow-sm bg-white shrink-0 group-hover:scale-105 transition-transform"
+                                className="w-12 h-12 rounded-xl object-cover border border-zinc-200 bg-zinc-50 shrink-0"
                               />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">
-                                  <h3 className="text-lg font-bold text-zinc-950 truncate group-hover:text-amber-900 transition-colors">
+                                  <h3 className="text-base sm:text-lg font-bold text-zinc-900 truncate">
                                     {house.name}
                                   </h3>
                                   {house.verified ? (
@@ -522,8 +516,8 @@ function ExploreContent() {
                                     <Sparkles className="w-4 h-4 text-amber-600 shrink-0" title="Independent / Local Studio"/>
                                   )}
                                 </div>
-                                <p className="text-xs sm:text-sm text-zinc-600 truncate flex items-center gap-1.5 mt-0.5 font-medium">
-                                  <MapPin className="w-3.5 h-3.5 text-amber-500 shrink-0"/>
+                                <p className="text-xs text-zinc-500 truncate flex items-center gap-1 mt-0.5 font-medium">
+                                  <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0"/>
                                   {house.location}
                                 </p>
                               </div>
@@ -534,8 +528,8 @@ function ExploreContent() {
                               onClick={() => toggleSaveHouse(house.id)}
                               className={`p-2 rounded-xl border transition-all cursor-pointer ${
                                 isSaved
-                                  ? 'bg-rose-50 border-rose-200 text-rose-600 shadow-xs'
-                                  : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-500 hover:text-zinc-800 border-zinc-200'
+                                  ? 'bg-rose-50 border-rose-200 text-rose-600'
+                                  : 'bg-zinc-50 hover:bg-zinc-100 text-zinc-400 hover:text-zinc-700 border-zinc-200'
                               }`}
                               aria-label="Save studio"
                             >
@@ -549,33 +543,33 @@ function ExploreContent() {
                           {/* Studio Type / Badges */}
                           <div className="flex flex-wrap items-center gap-1.5">
                             {house.verified ? (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2.5 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0"/>
-                                GST Verified
+                                Verified
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-900 bg-amber-50 border border-amber-200/80 px-2.5 py-0.5 rounded-full">
+                              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-900 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
                                 <Sparkles className="w-3 h-3 text-amber-600 shrink-0"/>
-                                Local & Indie
+                                Local Indie
                               </span>
                             )}
                             {house.badges && house.badges.slice(0, 2).map((b) => (
-                              <span key={b} className="text-[11px] font-medium text-zinc-600 bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-full">
+                              <span key={b} className="text-[11px] font-normal text-zinc-600 bg-zinc-100 border border-zinc-200/70 px-2 py-0.5 rounded-md">
                                 {b}
                               </span>
                             ))}
                           </div>
 
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-md">
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="font-medium text-zinc-600 bg-zinc-100 px-2.5 py-1 rounded-md">
                               {house.availability}
                             </span>
-                            <span className="text-xs font-bold text-yellow-950 bg-yellow-100 border border-yellow-300 px-2.5 py-1 rounded-md">
+                            <span className="font-bold text-zinc-900 bg-yellow-100/70 border border-yellow-300/80 px-2.5 py-1 rounded-md">
                               From {formatINR(house.minBudget)}
                             </span>
                           </div>
 
-                          <p className="text-sm text-zinc-600 line-clamp-2 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-zinc-600 line-clamp-2 leading-relaxed">
                             {house.tagline}
                           </p>
 
@@ -584,7 +578,7 @@ function ExploreContent() {
                             {house.services.map((s) => (
                               <span
                                 key={s.id}
-                                className="text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200 px-2.5 py-1 rounded-md hover:border-yellow-400 hover:bg-yellow-50/70 hover:text-amber-900 transition-colors"
+                                className="text-xs text-zinc-600 bg-zinc-50 border border-zinc-200/80 px-2.5 py-1 rounded-md font-medium"
                               >
                                 {s.name}
                               </span>
@@ -596,17 +590,18 @@ function ExploreContent() {
                       {/* Footer Actions */}
                       <div className="px-5 pb-5 pt-0 flex items-center gap-2.5">
                         <Link href={`/production-houses/${house.id}`} className="flex-1">
-                          <Button variant="outline" size="md" className="w-full text-xs sm:text-sm font-semibold py-2.5 hover:border-zinc-400">
+                          <Button variant="outline" size="md" className="w-full text-xs font-semibold py-2">
                             View Specs
                           </Button>
                         </Link>
                         <Button
-                          variant="primary"
+                          variant={house.verified ? "primary" : "outline"}
                           size="md"
-                          className="flex-1 text-xs sm:text-sm font-bold py-2.5 shadow-sm"
-                          onClick={() => setEnquiryModalHouse(house)}
+                          disabled={!house.verified}
+                          className={`flex-1 text-xs font-bold py-2 ${!house.verified ? 'opacity-50 cursor-not-allowed text-zinc-400' : ''}`}
+                          onClick={() => house.verified && setEnquiryModalHouse(house)}
                         >
-                          Send Enquiry
+                          {house.verified ? 'Request Quote' : 'Verification Required'}
                         </Button>
                       </div>
                     </div>
@@ -622,7 +617,7 @@ function ExploreContent() {
                   variant="outline"
                   size="md"
                   onClick={() => setVisibleCount((prev) => prev + 6)}
-                  className="bg-white/95 hover:bg-white text-zinc-950 border-white/70 px-8 py-3 shadow-lg hover:shadow-xl text-sm font-bold transition-all"
+                  className="bg-white hover:bg-zinc-50 text-zinc-900 border-zinc-200 px-6 py-2.5 shadow-xs text-xs sm:text-sm font-semibold"
                 >
                   Load More Studios
                 </Button>
