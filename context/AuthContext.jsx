@@ -17,11 +17,24 @@ const DEMO_PRODUCTION_HOUSE = {
     name: 'Karan Singhal',
     email: 'production@studiobombayfilms.in',
     role: 'production_house',
+    category: 'business',
     companyName: 'Studio Bombay Films',
     location: 'Andheri West, Mumbai',
     createdAt: '2024-03-10T00:00:00Z',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     bio: 'Executive Producer at Studio Bombay Films. Commercial film director with 12+ years experience across TVCs and broadcast campaigns.',
+};
+const DEMO_FREELANCER = {
+    id: 'ph-freelancer-1',
+    name: 'Aman Deshmukh',
+    email: 'aman.freelance@adhoc.in',
+    role: 'production_house',
+    category: 'freelancer',
+    companyName: 'Aman Deshmukh Cinematography',
+    location: 'Bandra West, Mumbai',
+    createdAt: '2025-06-10T00:00:00Z',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+    bio: 'Freelance Commercial Cinematographer & Director. Crafting high-aesthetic ad films and visual campaigns.',
 };
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
@@ -88,10 +101,11 @@ export const AuthProvider = ({ children }) => {
             setToast(null);
         }, 4000);
     };
-    const login = async (email, role, name) => {
+    const login = async (email, role, name, category) => {
         let assignedId = `cust-${Date.now()}`;
         let company = 'Creative Client Co.';
         let userName = name || (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1));
+        let userCategory = category || 'business';
 
         try {
             const savedUsers = localStorage.getItem('adhoc_registered_users');
@@ -101,23 +115,107 @@ export const AuthProvider = ({ children }) => {
                 assignedId = registeredUser.id;
                 company = registeredUser.companyName;
                 userName = registeredUser.name;
+                if (registeredUser.category) {
+                    userCategory = registeredUser.category;
+                }
             }
         } catch {
             // fallback
         }
 
         if (role === 'production_house') {
-            // Check if there is an existing studio associated with this email
-            const existingStudio = productionHouses.find((h) => h.contactEmail?.toLowerCase() === email.toLowerCase());
-            if (existingStudio) {
-                assignedId = existingStudio.id;
-                company = existingStudio.name;
-            } else if (email === DEMO_PRODUCTION_HOUSE.email) {
-                assignedId = 'ph-1';
+            // Check if demo freelancer or demo studio
+            if (email.toLowerCase() === DEMO_FREELANCER.email.toLowerCase()) {
+                assignedId = DEMO_FREELANCER.id;
+                company = DEMO_FREELANCER.companyName;
+                userName = DEMO_FREELANCER.name;
+                userCategory = 'freelancer';
+            } else if (email.toLowerCase() === DEMO_PRODUCTION_HOUSE.email.toLowerCase()) {
+                assignedId = DEMO_PRODUCTION_HOUSE.id;
                 company = DEMO_PRODUCTION_HOUSE.companyName;
+                userName = DEMO_PRODUCTION_HOUSE.name;
+                userCategory = 'business';
             } else {
-                assignedId = assignedId.startsWith('ph-') ? assignedId : 'ph-1';
-                company = company || 'Studio Bombay Films';
+                // Check if there is an existing studio associated with this email
+                const existingStudio = productionHouses.find((h) => h.contactEmail?.toLowerCase() === email.toLowerCase());
+                if (existingStudio) {
+                    assignedId = existingStudio.id;
+                    company = existingStudio.name;
+                    if (existingStudio.category) {
+                        userCategory = existingStudio.category;
+                    }
+                } else {
+                    assignedId = assignedId.startsWith('ph-') ? assignedId : `ph-${Date.now()}`;
+                    company = company || (userCategory === 'freelancer' ? `${userName}` : 'Studio Bombay Films');
+                }
+            }
+
+            // If user is a freelancer, ensure their studio is in productionHouses and verified (no docs required)
+            if (userCategory === 'freelancer') {
+                const studioExists = productionHouses.some((h) => h.id === assignedId);
+                if (!studioExists) {
+                    const freelancerStudio = {
+                        id: assignedId,
+                        name: company || userName,
+                        slug: (company || userName).toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                        tagline: 'Freelance Commercial Cinematographer & Director',
+                        description: `Independent creator and freelancer. Specializing in commercial video and narrative films. Operating with instant access (no documentation required).`,
+                        logoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80',
+                        coverImageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1400&auto=format&fit=crop&q=80',
+                        location: 'Mumbai, India',
+                        city: 'Mumbai',
+                        country: 'India',
+                        category: 'freelancer',
+                        studioType: 'Freelancer / Individual',
+                        verified: true, // No documentation required for freelancers
+                        gstRegistered: false,
+                        verificationStatus: 'verified',
+                        verificationDocument: {
+                            docType: 'individual_exempt',
+                            docNumber: 'EXEMPT-INDIVIDUAL',
+                            legalName: userName,
+                            signatoryName: userName,
+                            panNumber: 'N/A (Individual)',
+                            fileName: 'individual_exemption.pdf',
+                            fileSize: '0 KB (Exempt)',
+                            verifiedAt: new Date().toISOString(),
+                            statusMessage: 'Freelancer / Individual — Verified without documentation',
+                        },
+                        rating: 5.0,
+                        reviewCount: 0,
+                        yearsInBusiness: 3,
+                        teamSize: 'Solo Creator & Freelancers',
+                        responseRateHours: 1,
+                        budgetTier: '₹',
+                        minBudget: 35000,
+                        availability: 'Available Now',
+                        featured: false,
+                        badges: ['Freelancer / Individual', 'Direct Verified', 'No Docs Required'],
+                        notableClients: ['Independent Brands & Creators'],
+                        contactEmail: email,
+                        phone: '+91 98765 43210',
+                        website: `https://${userName.toLowerCase().replace(/[^a-z0-9]+/g, '')}.films`,
+                        equipmentFacilities: ['Sony FX6 Cinema Rig', 'Field Lighting Kit', 'DaVinci Resolve Editing Suite'],
+                        studioFloorSpecs: 'Independent creative setup with mobile gear',
+                        services: [
+                            {
+                                id: `s-${Date.now()}-1`,
+                                name: 'Video Production',
+                                description: 'Commercial ad direction, cinematography, and post-production.',
+                                startingPrice: 50000,
+                                turnaroundDays: 7,
+                                tags: ['Commercial Video', 'Cinematography', 'Social Reels'],
+                            },
+                        ],
+                        portfolio: [],
+                        reviews: [],
+                    };
+                    setProductionHouses((prev) => {
+                        const updated = [freelancerStudio, ...prev];
+                        localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
+                        return updated;
+                    });
+                }
             }
         }
 
@@ -127,25 +225,44 @@ export const AuthProvider = ({ children }) => {
             name: userName,
             email,
             role,
+            category: role === 'production_house' ? userCategory : undefined,
             companyName: company,
             createdAt: new Date().toISOString(),
-            avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+            avatarUrl: userCategory === 'freelancer'
+                ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
         };
         setUser(newUser);
         localStorage.setItem('adhoc_user', JSON.stringify(newUser));
-        showToast(`Welcome back, ${newUser.name}! Logged in as ${role === 'customer' ? 'Business' : 'Production House'}.`);
+        const roleLabel = role === 'customer'
+            ? 'Business'
+            : userCategory === 'freelancer'
+                ? 'Freelancer / Individual'
+                : 'Production House Business';
+        showToast(`Welcome back, ${newUser.name}! Logged in as ${roleLabel}.`);
         return true;
     };
     const loginAsDemo = (demoRole) => {
-        const targetUser = demoRole === 'customer' ? DEMO_CUSTOMER : DEMO_PRODUCTION_HOUSE;
+        let targetUser = DEMO_CUSTOMER;
+        if (demoRole === 'freelancer') {
+            targetUser = DEMO_FREELANCER;
+        } else if (demoRole === 'production_house') {
+            targetUser = DEMO_PRODUCTION_HOUSE;
+        }
         setUser(targetUser);
         localStorage.setItem('adhoc_user', JSON.stringify(targetUser));
-        showToast(`Switched demo account: Logged in as ${targetUser.name} (${targetUser.role === 'customer' ? 'Business' : 'Production House'})`);
+        const roleLabel = targetUser.category === 'freelancer'
+            ? 'Freelancer / Individual'
+            : targetUser.role === 'customer'
+                ? 'Business'
+                : 'Production House Business';
+        showToast(`Switched demo account: Logged in as ${targetUser.name} (${roleLabel})`);
     };
-    const signup = async (email, name, role, companyName, location) => {
+    const signup = async (email, name, role, companyName, location, category = 'business') => {
         if (role === 'production_house') {
             const studioId = `ph-${Date.now()}`;
-            const studioName = companyName || `${name} Studios`;
+            const isFreelancer = category === 'freelancer';
+            const studioName = companyName || (isFreelancer ? name : `${name} Studios`);
             const studioCity = location ? location.split(',')[0].trim() : 'Mumbai';
             const studioLocation = location || `${studioCity}, India`;
 
@@ -153,28 +270,48 @@ export const AuthProvider = ({ children }) => {
                 id: studioId,
                 name: studioName,
                 slug: studioName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
-                tagline: 'Independent Commercial & Creative Video Studio',
-                description: `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft commercial films, branded video, and social campaigns. Document verification (GST or Udyam Certificate) is required to operate.`,
-                logoUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80',
+                tagline: isFreelancer
+                    ? 'Freelance Commercial Cinematographer & Director'
+                    : 'Independent Commercial & Creative Video Studio',
+                description: isFreelancer
+                    ? `Independent creator and freelancer based in ${studioLocation}. Founded by ${name}. Direct marketplace access without documentation requirements.`
+                    : `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft commercial films, branded video, and social campaigns. Document verification (GST or Udyam Certificate) is required to operate.`,
+                logoUrl: isFreelancer
+                    ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80'
+                    : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80',
                 coverImageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1400&auto=format&fit=crop&q=80',
                 location: studioLocation,
                 city: studioCity,
                 country: 'India',
-                verified: false, // Mandatory verification required before operations are enabled
+                category: isFreelancer ? 'freelancer' : 'business',
+                // Freelancer won't have to go through any documentation process -> direct verified
+                verified: isFreelancer ? true : false,
                 gstRegistered: false,
-                verificationStatus: 'unverified',
-                verificationDocument: null,
-                studioType: 'Commercial Production House',
+                verificationStatus: isFreelancer ? 'verified' : 'unverified',
+                verificationDocument: isFreelancer ? {
+                    docType: 'individual_exempt',
+                    docNumber: 'EXEMPT-INDIVIDUAL',
+                    legalName: name,
+                    signatoryName: name,
+                    panNumber: 'N/A (Individual)',
+                    fileName: 'individual_creator_exempt.pdf',
+                    fileSize: '0 KB (Exempt)',
+                    verifiedAt: new Date().toISOString(),
+                    statusMessage: 'Freelancer / Individual — Verified without documentation',
+                } : null,
+                studioType: isFreelancer ? 'Freelancer / Individual' : 'Commercial Production House',
                 rating: 5.0,
                 reviewCount: 0,
                 yearsInBusiness: 1,
-                teamSize: '5-12 Crew & Creatives',
-                responseRateHours: 2,
+                teamSize: isFreelancer ? 'Solo Creator' : '5-12 Crew & Creatives',
+                responseRateHours: 1,
                 budgetTier: '₹',
-                minBudget: 50000,
+                minBudget: isFreelancer ? 35000 : 50000,
                 availability: 'Available Now',
                 featured: false,
-                badges: ['Local Indie Studio', 'Portfolio Showcase'],
+                badges: isFreelancer
+                    ? ['Freelancer / Individual', 'Direct Verified', 'No Docs Required', 'Portfolio Showcase']
+                    : ['Local Indie Studio', 'Portfolio Showcase'],
                 notableClients: ['Local Brands & Creators'],
                 contactEmail: email,
                 phone: '+91 98765 43210',
@@ -184,22 +321,24 @@ export const AuthProvider = ({ children }) => {
                     'High-CRI Field Lighting Kit',
                     'DaVinci Resolve Color Grading Suite',
                 ],
-                studioFloorSpecs: 'Boutique studio workspace with edit & audio suite',
+                studioFloorSpecs: isFreelancer
+                    ? 'Independent creative setup with mobile gear'
+                    : 'Boutique studio workspace with edit & audio suite',
                 services: [
                     {
                         id: `s-${Date.now()}-1`,
                         name: 'Video Production',
                         description: 'End-to-end commercial video production: concept ideation, cinematography, editing, and sound design.',
-                        startingPrice: 65000,
-                        turnaroundDays: 12,
-                        tags: ['Commercial Ad', 'Brand Narrative', 'Music Video', '4K Master'],
+                        startingPrice: isFreelancer ? 45000 : 65000,
+                        turnaroundDays: isFreelancer ? 7 : 12,
+                        tags: ['Commercial Ad', 'Brand Narrative', 'Social Video', '4K Master'],
                     },
                     {
                         id: `s-${Date.now()}-2`,
                         name: 'Digital Advertisement',
                         description: 'Short-form vertical video ads, dynamic social hooks, and promotional reels.',
                         startingPrice: 25000,
-                        turnaroundDays: 5,
+                        turnaroundDays: 4,
                         tags: ['Social Video', '9:16 Reels', 'Performance Hooks'],
                     },
                 ],
@@ -225,9 +364,12 @@ export const AuthProvider = ({ children }) => {
                 name,
                 email,
                 role,
+                category: isFreelancer ? 'freelancer' : 'business',
                 companyName: studioName,
                 createdAt: new Date().toISOString(),
-                avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                avatarUrl: isFreelancer
+                    ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                    : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
             };
 
             setProductionHouses((prev) => {
@@ -245,7 +387,10 @@ export const AuthProvider = ({ children }) => {
                 // ignore
             }
 
-            showToast(`Account successfully created for ${studioName}! Please log in.`, 'success');
+            const successMsg = isFreelancer
+                ? `Freelancer account created for ${name}! No documentation required — instant access active.`
+                : `Account successfully created for ${studioName}! Please log in.`;
+            showToast(successMsg, 'success');
             return true;
         }
 

@@ -58,7 +58,12 @@ export default function ProductionHouseDashboardPage() {
     (user?.role === 'production_house' && (user?.productionHouseId || user?.id)) || 'ph-1';
   const studio = productionHouses.find((h) => h.id === studioId) || productionHouses[0];
 
-  const isStudioVerified = Boolean(studio?.verified);
+  const isFreelancer =
+    studio?.category === 'freelancer' ||
+    user?.category === 'freelancer' ||
+    studio?.studioType?.toLowerCase().includes('freelancer');
+
+  const isStudioVerified = isFreelancer || Boolean(studio?.verified);
 
   // Default to verification tab if studio is unverified
   const [activeTab, setActiveTab] = useState(isStudioVerified ? 'enquiries' : 'verification');
@@ -402,7 +407,12 @@ export default function ProductionHouseDashboardPage() {
                 </h1>
 
                 {/* Verification Status Pill */}
-                {isStudioVerified ? (
+                {isFreelancer ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                    Freelancer / Individual • Instant Verified (No Docs Required)
+                  </span>
+                ) : isStudioVerified ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                     Verified Genuine ({studio.verificationDocument?.docType?.toUpperCase() || 'GST'})
@@ -516,9 +526,9 @@ export default function ProductionHouseDashboardPage() {
           {[
             {
               id: 'verification',
-              label: 'Document Verification',
-              badge: isStudioVerified ? 'Verified' : 'Required',
-              badgeStyle: isStudioVerified
+              label: isFreelancer ? 'Verification Status' : 'Document Verification',
+              badge: isFreelancer ? 'No Docs Needed' : (isStudioVerified ? 'Verified' : 'Required'),
+              badgeStyle: isFreelancer || isStudioVerified
                 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                 : 'bg-rose-100 text-rose-800 font-bold border border-rose-300',
             },
@@ -583,7 +593,79 @@ export default function ProductionHouseDashboardPage() {
         {/* ========================================================================= */}
         {activeTab === 'verification' && (
           <div className="space-y-6">
-            {isStudioVerified ? (
+            {isFreelancer ? (
+              /* FREELANCER / INDIVIDUAL: NO DOCUMENTATION REQUIRED CARD */
+              <div className="bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/90 shadow-soft space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100">
+                  <div className="flex items-center gap-3.5">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shrink-0">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg sm:text-xl font-black text-zinc-900">
+                          Freelancer / Individual Account
+                        </h3>
+                        <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                          No Docs Required • Active
+                        </span>
+                      </div>
+                      <p className="text-xs sm:text-sm text-zinc-500 mt-0.5">
+                        As an individual creator or freelancer, you are exempt from GST / Udyam registration paperwork. All marketplace operations are fully unlocked.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Freelancer Status Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs sm:text-sm">
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80 space-y-1">
+                    <span className="text-[11px] text-zinc-400 uppercase font-semibold block">Account Category</span>
+                    <span className="font-bold text-zinc-900">Freelancer / Individual</span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80 space-y-1">
+                    <span className="text-[11px] text-zinc-400 uppercase font-semibold block">Documentation Status</span>
+                    <span className="font-mono font-bold text-emerald-700 text-sm">Exempt (Direct Access)</span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80 space-y-1">
+                    <span className="text-[11px] text-zinc-400 uppercase font-semibold block">Creator Name</span>
+                    <span className="font-bold text-zinc-900 truncate block">{user?.name || studio.name}</span>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-zinc-50 border border-zinc-200/80 space-y-1">
+                    <span className="text-[11px] text-zinc-400 uppercase font-semibold block">Operational Status</span>
+                    <span className="font-medium text-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                      Instant Active
+                    </span>
+                  </div>
+                </div>
+
+                {/* Benefits / Unlocked Features */}
+                <div className="p-4 rounded-xl bg-emerald-50/60 border border-emerald-200/80 space-y-2 text-xs sm:text-sm">
+                  <div className="flex items-center gap-2 font-semibold text-emerald-950">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                    <span>Unlocked Marketplace Capabilities for Freelancers:</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 text-xs text-emerald-900">
+                    <div className="flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Direct Quote Submissions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Live Client Messaging</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>Portfolio & Rate Publishing</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : isStudioVerified ? (
               /* ALREADY VERIFIED: DISPLAY OFFICIAL CERTIFICATE CARD */
               <div className="bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/90 shadow-soft space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-zinc-100">

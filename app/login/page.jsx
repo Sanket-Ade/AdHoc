@@ -15,6 +15,9 @@ export function AuthForm({ initialMode }) {
     // Role: 'customer' (Business) or 'production_house' (Production House)
     const queryRole = searchParams.get('role');
     const [role, setRole] = useState(queryRole === 'production_house' ? 'production_house' : 'customer');
+    // Category for Production House: 'freelancer' (Freelancer / Individual) or 'business' (Production House Business)
+    const queryCategory = searchParams.get('category');
+    const [category, setCategory] = useState(queryCategory === 'freelancer' ? 'freelancer' : 'business');
     // Form states
     const [name, setName] = useState('');
     const [companyName, setCompanyName] = useState('');
@@ -31,6 +34,7 @@ export function AuthForm({ initialMode }) {
     );
     const [isLoading, setIsLoading] = useState(false);
     const { login, signup } = useAuth();
+
     const handleLoginSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -52,7 +56,7 @@ export function AuthForm({ initialMode }) {
         }
         setIsLoading(true);
         try {
-            await login(email, role);
+            await login(email, role, undefined, category);
             if (role === 'production_house') {
                 router.push('/dashboard/production-house');
             }
@@ -67,6 +71,7 @@ export function AuthForm({ initialMode }) {
             setIsLoading(false);
         }
     };
+
     const handleSignUpSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -74,7 +79,7 @@ export function AuthForm({ initialMode }) {
             setError('Please fill in all required fields.');
             return;
         }
-        if (role === 'production_house' && !companyName) {
+        if (role === 'production_house' && category === 'business' && !companyName) {
             setError('Please provide your Production House / Studio name.');
             return;
         }
@@ -96,18 +101,43 @@ export function AuthForm({ initialMode }) {
         }
         setIsLoading(true);
         try {
-            await signup(email, name, role, companyName, location);
+            await signup(email, name, role, companyName, location, category);
             setPassword('');
             setShowPassword(false);
-            setSuccessMessage(`Account created successfully! Please log in as ${role === 'customer' ? 'Business' : 'Production House'} to continue.`);
+            const accountTypeLabel = role === 'customer'
+                ? 'Business'
+                : category === 'freelancer'
+                    ? 'Freelancer / Individual'
+                    : 'Production House Business';
+            setSuccessMessage(`Account created successfully! ${category === 'freelancer' ? 'No documentation required — instant access unlocked. ' : ''}Please log in as ${accountTypeLabel} to continue.`);
             setMode('login');
-            router.push(`/login?role=${role}&registered=true`);
+            router.push(`/login?role=${role}&category=${category}&registered=true`);
         }
         catch {
             setError('Failed to create account. Please try again.');
         }
         finally {
             setIsLoading(false);
+        }
+    };
+
+    const fillDemoCredentials = (demoType) => {
+        setError('');
+        setSuccessMessage('');
+        if (demoType === 'customer') {
+            setRole('customer');
+            setEmail('sarah@aurorabev.in');
+            setPassword('Password123!');
+        } else if (demoType === 'business') {
+            setRole('production_house');
+            setCategory('business');
+            setEmail('production@studiobombayfilms.in');
+            setPassword('Password123!');
+        } else if (demoType === 'freelancer') {
+            setRole('production_house');
+            setCategory('freelancer');
+            setEmail('aman.freelance@adhoc.in');
+            setPassword('Password123!');
         }
     };
     return (
@@ -120,8 +150,16 @@ export function AuthForm({ initialMode }) {
             </h1>
             <p className="text-xs text-zinc-500 max-w-xs mx-auto font-normal">
               {mode === 'login'
-              ? `Access your ${role === 'customer' ? 'Business' : 'Production House'} account`
-              : `Join as a ${role === 'customer' ? 'Business to commission work' : 'Production House to receive briefs'}`}
+                ? role === 'customer'
+                  ? 'Access your Business account'
+                  : category === 'freelancer'
+                    ? 'Access your Freelancer / Individual creator account'
+                    : 'Access your Production House Business account'
+                : role === 'customer'
+                  ? 'Join as a Business to commission commercial work'
+                  : category === 'freelancer'
+                    ? 'Join as a Freelancer / Individual (No documentation needed)'
+                    : 'Join as a Production House Business to receive briefs'}
             </p>
           </div>
 
@@ -129,47 +167,114 @@ export function AuthForm({ initialMode }) {
           <div className="bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/90 shadow-soft space-y-5 animate-in fade-in duration-200">
           
           {/* Role Selector Tabs (Business vs Production House) */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5 px-0.5">
-              <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
-                Select Account Type
-              </span>
-              <span className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full">
-                {role === 'customer' ? 'Business' : 'Production House'}
-              </span>
+          <div className="space-y-3">
+            <div>
+              <div className="flex items-center justify-between mb-1.5 px-0.5">
+                <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                  Select Account Type
+                </span>
+                <span className="text-[11px] font-medium text-amber-800 bg-amber-50 border border-amber-200/60 px-2 py-0.5 rounded-full">
+                  {role === 'customer' ? 'Business' : 'Production House'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 p-1.5 bg-zinc-100 rounded-xl border border-zinc-200/60 gap-1">
+                <button type="button" onClick={() => { setRole('customer'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'customer'
+              ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
+                  <div className="flex items-center gap-1.5">
+                    <Briefcase className={`w-4 h-4 ${role === 'customer' ? 'text-amber-600' : 'text-zinc-400'}`}/>
+                    <span>Business</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-600 font-normal">Brands & Agencies</span>
+                </button>
+
+                <button type="button" onClick={() => { setRole('production_house'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'production_house'
+              ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
+              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
+                  <div className="flex items-center gap-1.5">
+                    <Building2 className={`w-4 h-4 ${role === 'production_house' ? 'text-amber-600' : 'text-zinc-400'}`}/>
+                    <span>Production House</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-600 font-normal">Studios & Freelancers</span>
+                </button>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 p-1.5 bg-zinc-100 rounded-xl border border-zinc-200/60 gap-1">
-              <button type="button" onClick={() => { setRole('customer'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'customer'
-            ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
-            : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className={`w-4 h-4 ${role === 'customer' ? 'text-amber-600' : 'text-zinc-400'}`}/>
-                  <span>Business</span>
+            {/* Production House Category Selector: Freelancer/Individual vs Production House Business */}
+            {role === 'production_house' && (
+              <div className="space-y-1.5 pt-1 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between px-0.5">
+                  <span className="text-[11px] font-semibold text-zinc-500 uppercase tracking-wider">
+                    Production Category
+                  </span>
+                  <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                    category === 'freelancer'
+                      ? 'text-emerald-800 bg-emerald-50 border-emerald-200'
+                      : 'text-amber-800 bg-amber-50 border-amber-200/60'
+                  }`}>
+                    {category === 'freelancer' ? 'Freelancer / Individual' : 'Production House Business'}
+                  </span>
                 </div>
-                <span className="text-[10px] text-zinc-600 font-normal">Brands & Agencies</span>
-              </button>
 
-              <button type="button" onClick={() => { setRole('production_house'); setError(''); setSuccessMessage(''); }} className={`py-2.5 px-3 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${role === 'production_house'
-            ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
-            : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'}`}>
-                <div className="flex items-center gap-1.5">
-                  <Building2 className={`w-4 h-4 ${role === 'production_house' ? 'text-amber-600' : 'text-zinc-400'}`}/>
-                  <span>Production House</span>
+                <div className="grid grid-cols-2 p-1.5 bg-zinc-100 rounded-xl border border-zinc-200/60 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => { setCategory('freelancer'); setError(''); setSuccessMessage(''); }}
+                    className={`py-2 px-2.5 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      category === 'freelancer'
+                        ? 'bg-white text-zinc-950 shadow-sm border border-emerald-300 font-bold'
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <UserCircle2 className={`w-4 h-4 ${category === 'freelancer' ? 'text-emerald-600' : 'text-zinc-400'}`} />
+                      <span>Freelancer / Individual</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-700 font-medium">No Documentation Required</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => { setCategory('business'); setError(''); setSuccessMessage(''); }}
+                    className={`py-2 px-2.5 text-xs font-semibold rounded-lg flex flex-col items-center justify-center gap-1 transition-all cursor-pointer ${
+                      category === 'business'
+                        ? 'bg-white text-zinc-950 shadow-sm border border-zinc-200/80 font-bold'
+                        : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-200/50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <Building2 className={`w-4 h-4 ${category === 'business' ? 'text-amber-600' : 'text-zinc-400'}`} />
+                      <span>Production House Business</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-500 font-normal">GST / Udyam Verified Studio</span>
+                  </button>
                 </div>
-                <span className="text-[10px] text-zinc-600 font-normal">Commercial & Local Indie Studios</span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
-          {/* Mandatory Document Verification Notice for Production Houses */}
-          {role === 'production_house' && (
-            <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-950 flex items-start gap-2.5">
+          {/* Notice for Production House Business (Mandatory GST/Udyam verification) */}
+          {role === 'production_house' && category === 'business' && (
+            <div className="p-3 bg-rose-50 rounded-xl border border-rose-200 text-xs text-rose-950 flex items-start gap-2.5 animate-in fade-in duration-200">
               <ShieldCheck className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
               <div className="space-y-0.5">
-                <p className="font-bold text-rose-900">Document verification is mandatory</p>
+                <p className="font-bold text-rose-900">Document verification is mandatory for Businesses</p>
                 <p className="text-rose-700 leading-relaxed text-[11px]">
-                  To confirm genuine business credentials, every production house must verify with a valid GST or Udyam Certificate. Without verification, you cannot send quotes, message clients, or receive bookings.
+                  To confirm genuine business credentials, every production house business must verify with a valid GST or Udyam Certificate. Without verification, you cannot send quotes, message clients, or receive bookings.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Notice for Freelancer / Individual (NO DOCUMENTATION REQUIRED) */}
+          {role === 'production_house' && category === 'freelancer' && (
+            <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-950 flex items-start gap-2.5 animate-in fade-in duration-200">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold text-emerald-900">Instant Access — No Documentation Required</p>
+                <p className="text-emerald-700 leading-relaxed text-[11px]">
+                  As a Freelancer or Individual creator, you do not have to go through any documentation or GST/Udyam verification process. Enjoy instant active status to send quotes, receive briefs, and message clients immediately.
                 </p>
               </div>
             </div>
@@ -190,7 +295,15 @@ export function AuthForm({ initialMode }) {
 
           {/* LOGIN FORM */}
           {mode === 'login' && (<form onSubmit={handleLoginSubmit} className="space-y-3.5">
-              <Input label={role === 'customer' ? 'Business Work Email' : 'Production House Work Email'} type="email" required placeholder={role === 'customer' ? 'business@aurorabev.in' : 'contact@studiobombayfilms.in'} value={email} onChange={(e) => setEmail(e.target.value)} leftIcon={<Mail className="w-4 h-4"/>}/>
+              <Input
+                label={role === 'customer' ? 'Business Work Email' : category === 'freelancer' ? 'Freelancer / Creator Email' : 'Production House Business Email'}
+                type="email"
+                required
+                placeholder={role === 'customer' ? 'business@aurorabev.in' : category === 'freelancer' ? 'aman.freelance@adhoc.in' : 'contact@studiobombayfilms.in'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftIcon={<Mail className="w-4 h-4"/>}
+              />
 
               <div>
                 <Input
@@ -221,7 +334,7 @@ export function AuthForm({ initialMode }) {
               </div>
 
               <Button type="submit" variant="primary" size="lg" className="w-full mt-2 text-xs font-bold" isLoading={isLoading} rightIcon={<ArrowRight className="w-3.5 h-3.5"/>}>
-                Log In as {role === 'customer' ? 'Business' : 'Production House'}
+                Log In as {role === 'customer' ? 'Business' : category === 'freelancer' ? 'Freelancer / Individual' : 'Production House Business'}
               </Button>
             </form>)}
 
@@ -229,17 +342,38 @@ export function AuthForm({ initialMode }) {
           {mode === 'signup' && (<form onSubmit={handleSignUpSubmit} className="space-y-3.5 animate-in fade-in duration-200">
               <Input label="Full Name" required placeholder="e.g. Vikram Malhotra" value={name} onChange={(e) => setName(e.target.value)} leftIcon={<UserCircle2 className="w-4 h-4"/>}/>
 
-              <Input label={role === 'production_house'
-                ? 'Production House / Studio Name'
-                : 'Business or Company Name (Optional)'} required={role === 'production_house'} placeholder={role === 'production_house'
-                ? 'e.g. CineCraft Studios'
-                : 'e.g. Tata Consumer Products'} value={companyName} onChange={(e) => setCompanyName(e.target.value)} leftIcon={<Building2 className="w-4 h-4"/>}/>
+              <Input
+                label={role === 'production_house'
+                  ? (category === 'freelancer' ? 'Portfolio / Creator Brand Name (Optional)' : 'Production House / Studio Name')
+                  : 'Business or Company Name (Optional)'}
+                required={role === 'production_house' && category === 'business'}
+                placeholder={role === 'production_house'
+                  ? (category === 'freelancer' ? 'e.g. Aman Deshmukh Films or leave blank' : 'e.g. CineCraft Studios')
+                  : 'e.g. Tata Consumer Products'}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                leftIcon={<Building2 className="w-4 h-4"/>}
+              />
 
               {role === 'production_house' && (
-                <Input label="Studio Base City / Region" placeholder="e.g. Pune, Jaipur, Bandra Mumbai, Bengaluru" value={location} onChange={(e) => setLocation(e.target.value)} leftIcon={<MapPin className="w-4 h-4"/>}/>
+                <Input
+                  label={category === 'freelancer' ? 'Your Base City / Location' : 'Studio Base City / Region'}
+                  placeholder={category === 'freelancer' ? 'e.g. Bandra Mumbai, Bengaluru, Delhi NCR' : 'e.g. Pune, Jaipur, Bandra Mumbai, Bengaluru'}
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  leftIcon={<MapPin className="w-4 h-4"/>}
+                />
               )}
 
-              <Input label={role === 'customer' ? 'Business Email' : 'Production House Email'} type="email" required placeholder={role === 'customer' ? 'vikram@company.com' : 'contact@cinecraft.in'} value={email} onChange={(e) => setEmail(e.target.value)} leftIcon={<Mail className="w-4 h-4"/>}/>
+              <Input
+                label={role === 'customer' ? 'Business Email' : category === 'freelancer' ? 'Freelancer Email' : 'Production House Email'}
+                type="email"
+                required
+                placeholder={role === 'customer' ? 'vikram@company.com' : category === 'freelancer' ? 'aman.films@gmail.com' : 'contact@cinecraft.in'}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                leftIcon={<Mail className="w-4 h-4"/>}
+              />
 
               <div>
                 <Input
@@ -283,13 +417,44 @@ export function AuthForm({ initialMode }) {
 
               <label className="flex items-center gap-2 text-xs text-zinc-600 cursor-pointer pt-1">
                 <input type="checkbox" checked={agreeTerms} onChange={(e) => setAgreeTerms(e.target.checked)} className="rounded accent-amber-500 cursor-pointer"/>
-                <span>I agree to marketplace SLA and production terms</span>
+                <span>I agree to marketplace SLA and {category === 'freelancer' ? 'creator terms (no documentation needed)' : 'production terms'}</span>
               </label>
 
               <Button type="submit" variant="primary" size="lg" className="w-full mt-2 text-xs font-bold" isLoading={isLoading} rightIcon={<ArrowRight className="w-3.5 h-3.5"/>}>
-                Create {role === 'customer' ? 'Business' : 'Production House'} Account
+                Create {role === 'customer' ? 'Business' : category === 'freelancer' ? 'Freelancer / Individual' : 'Production House Business'} Account
               </Button>
             </form>)}
+
+          {/* Quick Demo Fill Shortcut */}
+          <div className="pt-3 border-t border-zinc-100">
+            <div className="text-[11px] font-semibold text-zinc-400 mb-1.5 text-center uppercase tracking-wider">
+              Quick Test Sign In
+            </div>
+            <div className="grid grid-cols-3 gap-1.5 text-[11px]">
+              <button
+                type="button"
+                onClick={() => fillDemoCredentials('customer')}
+                className="px-2 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-medium border border-zinc-200/80 transition-colors cursor-pointer text-center truncate"
+              >
+                Client (Sarah)
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemoCredentials('business')}
+                className="px-2 py-1.5 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-medium border border-zinc-200/80 transition-colors cursor-pointer text-center truncate"
+              >
+                Studio (Bombay)
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemoCredentials('freelancer')}
+                className="px-2 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold transition-colors cursor-pointer text-center truncate"
+                title="Freelancer / Individual - No documentation needed"
+              >
+                Freelancer (Aman)
+              </button>
+            </div>
+          </div>
 
           {/* Toggle between Login and Signup */}
           <div className="pt-3 border-t border-zinc-100 text-center text-xs text-zinc-600">

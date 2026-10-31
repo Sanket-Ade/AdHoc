@@ -10,7 +10,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ProductionHouseCardSkeleton } from '@/components/ui/Skeleton';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
 import { formatINR } from '@/lib/format';
-import { Search, MapPin, SlidersHorizontal, X, CheckCircle2, Heart, ArrowUpDown, Building2, ShieldCheck, Sparkles } from 'lucide-react';
+import { Search, MapPin, SlidersHorizontal, X, CheckCircle2, Heart, ArrowUpDown, Building2, ShieldCheck, Sparkles, UserCircle2 } from 'lucide-react';
 function ExploreContent() {
     const searchParams = useSearchParams();
     const initialCategory = searchParams.get('category') || '';
@@ -36,10 +36,13 @@ function ExploreContent() {
         return productionHouses
             .filter((house) => {
             // Verification / Studio Type filter
-            if (verificationFilter === 'verified' && !house.verified) {
+            if (verificationFilter === 'verified' && (!house.verified || house.category === 'freelancer')) {
                 return false;
             }
-            if (verificationFilter === 'independent' && house.verified) {
+            if (verificationFilter === 'freelancer' && house.category !== 'freelancer') {
+                return false;
+            }
+            if (verificationFilter === 'independent' && (house.verified || house.category === 'freelancer')) {
                 return false;
             }
             // Search text matching name, tagline, description, services, notable clients
@@ -215,7 +218,11 @@ function ExploreContent() {
             </span>
             {verificationFilter !== 'all' && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-900 border border-zinc-200">
-                {verificationFilter === 'verified' ? 'GST Verified' : 'Local & Indie'}
+                {verificationFilter === 'verified'
+                  ? 'GST Verified Studios'
+                  : verificationFilter === 'freelancer'
+                    ? 'Freelancer / Individual'
+                    : 'Local & Indie Studios'}
                 <button onClick={() => setVerificationFilter('all')} className="hover:text-rose-600 cursor-pointer">
                   <X className="w-3.5 h-3.5"/>
                 </button>
@@ -287,7 +294,7 @@ function ExploreContent() {
             {/* 1. Studio Type & Verification */}
             <div>
               <label className="text-xs font-bold uppercase tracking-wider text-zinc-900 block mb-2.5">
-                Studio Verification Type
+                Category & Verification
               </label>
               <div className="space-y-1 text-sm text-zinc-700">
                 <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
@@ -298,7 +305,7 @@ function ExploreContent() {
                     onChange={() => setVerificationFilter('all')}
                     className="accent-amber-500 w-4 h-4"
                   />
-                  <span className="font-medium">All Studios</span>
+                  <span className="font-medium">All Creators & Studios</span>
                 </label>
                 <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
                   <input
@@ -310,7 +317,20 @@ function ExploreContent() {
                   />
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span className="font-medium">GST Verified</span>
+                    <span className="font-medium">GST Verified Studios</span>
+                  </div>
+                </label>
+                <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="verification"
+                    checked={verificationFilter === 'freelancer'}
+                    onChange={() => setVerificationFilter('freelancer')}
+                    className="accent-amber-500 w-4 h-4"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <UserCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                    <span className="font-medium">Freelancer / Individual (No Docs)</span>
                   </div>
                 </label>
                 <label className="flex items-center gap-2.5 p-1.5 rounded-lg -mx-1 hover:bg-yellow-50/70 cursor-pointer transition-colors">
@@ -542,10 +562,15 @@ function ExploreContent() {
                         <div className="p-5 space-y-3.5">
                           {/* Studio Type / Badges */}
                           <div className="flex flex-wrap items-center gap-1.5">
-                            {house.verified ? (
+                            {house.category === 'freelancer' ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
+                                <UserCircle2 className="w-3 h-3 text-emerald-600 shrink-0"/>
+                                Freelancer / Individual
+                              </span>
+                            ) : house.verified ? (
                               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0"/>
-                                Verified
+                                GST Verified Studio
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-900 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-md">
