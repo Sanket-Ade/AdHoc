@@ -32,6 +32,18 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!*.env.example
+
+# backend server
+server/node_modules/
+server/.env
+
+# media / video binaries
+Videos/
+*.mov
+*.MOV
+*.mp4
+*.MP4
 
 # vercel
 .vercel

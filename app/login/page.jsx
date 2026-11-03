@@ -1,11 +1,12 @@
 'use client';
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Mail, Lock, Building2, Briefcase, UserCircle2, ArrowRight, ShieldCheck, Sparkles, MapPin, Eye, EyeOff, Check, CheckCircle2 } from 'lucide-react';
+import { Avatar } from '@/components/ui/Avatar';
+import { Mail, Lock, Building2, Briefcase, UserCircle2, ArrowRight, ShieldCheck, Sparkles, MapPin, Eye, EyeOff, Check, CheckCircle2, Camera } from 'lucide-react';
 export function AuthForm({ initialMode }) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -26,6 +27,8 @@ export function AuthForm({ initialMode }) {
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [agreeTerms, setAgreeTerms] = useState(true);
+    const [profilePic, setProfilePic] = useState('');
+    const signupFileInputRef = useRef(null);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState(
         searchParams.get('registered') === 'true'
@@ -42,21 +45,9 @@ export function AuthForm({ initialMode }) {
             setError('Please provide your work email and password.');
             return;
         }
-        if (password.length < 6) {
-            setError('Password must be at least 6 characters.');
-            return;
-        }
-        if (!/[A-Z]/.test(password)) {
-            setError('Password must contain at least one uppercase letter (A-Z).');
-            return;
-        }
-        if (!/[^A-Za-z0-9\s]/.test(password)) {
-            setError('Password must contain at least one special symbol (e.g. !@#$%^&*).');
-            return;
-        }
         setIsLoading(true);
         try {
-            await login(email, role, undefined, category);
+            await login(email, role, undefined, category, password);
             if (role === 'production_house') {
                 router.push('/dashboard/production-house');
             }
@@ -64,8 +55,8 @@ export function AuthForm({ initialMode }) {
                 router.push('/dashboard/customer');
             }
         }
-        catch {
-            setError('Invalid credentials. Please try again.');
+        catch (err) {
+            setError(err?.message || 'Invalid email or Password');
         }
         finally {
             setIsLoading(false);
@@ -101,8 +92,9 @@ export function AuthForm({ initialMode }) {
         }
         setIsLoading(true);
         try {
-            await signup(email, name, role, companyName, location, category);
+            await signup(email, name, role, companyName, location, category, password, profilePic);
             setPassword('');
+            setProfilePic('');
             setShowPassword(false);
             const accountTypeLabel = role === 'customer'
                 ? 'Business'
@@ -363,6 +355,63 @@ export function AuthForm({ initialMode }) {
                   onChange={(e) => setLocation(e.target.value)}
                   leftIcon={<MapPin className="w-4 h-4"/>}
                 />
+              )}
+
+              {role === 'production_house' && (
+                <div className="p-3 rounded-xl border border-zinc-200 bg-zinc-50/80 flex items-center gap-3">
+                  <Avatar
+                    src={profilePic}
+                    name={companyName || name || 'Studio'}
+                    className="w-12 h-12 rounded-xl text-lg shadow-xs shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => signupFileInputRef.current?.click()}
+                        className="text-xs font-bold text-amber-800 hover:text-amber-950 underline cursor-pointer"
+                      >
+                        {profilePic ? 'Change Photo' : 'Upload Profile Picture (Optional)'}
+                      </button>
+                      {profilePic && (
+                        <button
+                          type="button"
+                          onClick={() => setProfilePic('')}
+                          className="text-xs text-rose-600 hover:underline cursor-pointer"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-zinc-500 mt-0.5">
+                      {profilePic
+                        ? 'Profile picture selected'
+                        : `Leave empty to use initial "${((companyName || name || 'P').trim().charAt(0) || 'P').toUpperCase()}"`}
+                    </p>
+                    <input
+                      ref={signupFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        if (file.size > 5 * 1024 * 1024) {
+                          setError('Image too large. Please select an image under 5MB.');
+                          return;
+                        }
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          if (typeof ev.target?.result === 'string') {
+                            setProfilePic(ev.target.result);
+                          }
+                        };
+                        reader.readAsDataURL(file);
+                        e.target.value = '';
+                      }}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
               )}
 
               <Input

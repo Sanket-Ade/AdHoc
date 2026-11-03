@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Modal } from './ui/Modal';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
+import { Avatar } from './ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { POPULAR_CATEGORIES } from '@/lib/mock-data';
 import { Send, CheckCircle2, Clock, MessageSquare, ShieldAlert, Lock } from 'lucide-react';
@@ -11,7 +12,7 @@ import Link from 'next/link';
 export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCategory, initialTitle = '', initialDescription = '', initialBudget = '₹50,000 - ₹2,00,000', }) => {
     const { user, addEnquiry } = useAuth();
     const [title, setTitle] = useState(initialTitle);
-    const [category, setCategory] = useState(initialCategory || productionHouse?.services[0]?.name || 'Video Production');
+    const [category, setCategory] = useState(initialCategory || productionHouse?.services?.[0]?.name || 'Video Production');
     const [description, setDescription] = useState(initialDescription);
     const [budgetRange, setBudgetRange] = useState(initialBudget);
     const [deadline, setDeadline] = useState('');
@@ -129,7 +130,7 @@ export const SendEnquiryModal = ({ isOpen, onClose, productionHouse, initialCate
         </div>) : (<form onSubmit={handleSubmit} className="space-y-4">
           {/* Target Production House Summary Box */}
           <div className="flex items-center gap-3 p-3 bg-zinc-50 border border-zinc-200 rounded-xl">
-            <img src={productionHouse.logoUrl} alt={productionHouse.name} className="w-10 h-10 rounded-lg object-cover border border-zinc-200 shrink-0"/>
+            <Avatar src={productionHouse.logoUrl} name={productionHouse.name} className="w-10 h-10 rounded-lg text-base shrink-0"/>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-1.5">
                 <h4 className="text-sm font-bold text-zinc-900 truncate">{productionHouse.name}</h4>

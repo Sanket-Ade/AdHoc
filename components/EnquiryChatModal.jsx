@@ -4,6 +4,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Modal } from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { EnquiryStatusBadge } from '@/components/ui/Badge';
+import { Avatar } from '@/components/ui/Avatar';
 import { formatINR } from '@/lib/format';
 import {
   Send,
@@ -139,10 +140,10 @@ export const EnquiryChatModal = ({ isOpen, onClose, enquiryId }) => {
                   {(enquiry.customerName || 'C')[0].toUpperCase()}
                 </div>
               ) : (
-                <img
-                  src={studio?.logoUrl || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80'}
-                  alt={otherPartyName}
-                  className="w-11 h-11 rounded-xl object-cover border border-zinc-700 bg-zinc-800 shrink-0"
+                <Avatar
+                  src={studio?.logoUrl}
+                  name={otherPartyName}
+                  className="w-11 h-11 rounded-xl text-base shrink-0"
                 />
               )}
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border-2 border-zinc-900" />

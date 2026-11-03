@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/Badge';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ProductionHouseCardSkeleton } from '@/components/ui/Skeleton';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
+import { Avatar } from '@/components/ui/Avatar';
 import { formatINR } from '@/lib/format';
 import { Search, MapPin, SlidersHorizontal, X, CheckCircle2, Heart, ArrowUpDown, Building2, ShieldCheck, Sparkles, UserCircle2 } from 'lucide-react';
 function ExploreContent() {
@@ -520,10 +521,10 @@ function ExploreContent() {
                         <div className="p-5 pb-0">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                              <img
+                              <Avatar
                                 src={house.logoUrl}
-                                alt={house.name}
-                                className="w-12 h-12 rounded-xl object-cover border border-zinc-200 bg-zinc-50 shrink-0"
+                                name={house.name}
+                                className="w-12 h-12 rounded-xl text-lg shrink-0"
                               />
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-1.5">

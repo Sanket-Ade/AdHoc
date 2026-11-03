@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from './ui/Button';
+import { Avatar } from './ui/Avatar';
 import { Sparkles, Menu, X, Building2, UserCircle2, LogOut, LogIn } from 'lucide-react';
 export const Navbar = () => {
     const pathname = usePathname();
-    const { role, isAuthenticated, logout } = useAuth();
+    const { role, user, isAuthenticated, logout } = useAuth();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navLinks = [
         { label: 'Home', shortLabel: 'Home', href: '/' },
@@ -61,14 +62,14 @@ export const Navbar = () => {
                 : '/dashboard/customer'}>
                     <Button variant="secondary" size="sm" className="gap-1.5 lg:gap-2 whitespace-nowrap">
                       {role === 'production_house' ? (<>
-                          <Building2 className="w-4 h-4 text-amber-600"/>
+                          <Avatar src={user?.avatarUrl} name={user?.name || 'Studio'} className="w-5 h-5 rounded-md text-[10px] shrink-0" />
                           <span className="hidden lg:inline">Studio Dashboard</span>
                           <span className="lg:hidden">Studio</span>
                           <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded-full font-bold">
                             85%
                           </span>
                         </>) : (<>
-                          <UserCircle2 className="w-4 h-4 text-amber-600"/>
+                          <Avatar src={user?.avatarUrl} name={user?.name || 'User'} className="w-5 h-5 rounded-md text-[10px] shrink-0" />
                           <span className="hidden lg:inline">Business Dashboard</span>
                           <span className="lg:hidden">Dashboard</span>
                         </>)}

@@ -1,7 +1,10 @@
 'use client';
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { MOCK_PRODUCTION_HOUSES, INITIAL_ENQUIRIES } from '@/lib/mock-data';
+import { api } from '@/lib/api';
+
 const AuthContext = createContext(undefined);
+
 const DEMO_CUSTOMER = {
     id: 'cust-1',
     name: 'Sarah Jenkins',
@@ -12,6 +15,7 @@ const DEMO_CUSTOMER = {
     createdAt: '2026-01-15T00:00:00Z',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
 };
+
 const DEMO_PRODUCTION_HOUSE = {
     id: 'ph-1',
     name: 'Karan Singhal',
@@ -24,6 +28,7 @@ const DEMO_PRODUCTION_HOUSE = {
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     bio: 'Executive Producer at Studio Bombay Films. Commercial film director with 12+ years experience across TVCs and broadcast campaigns.',
 };
+
 const DEMO_FREELANCER = {
     id: 'ph-freelancer-1',
     name: 'Aman Deshmukh',
@@ -36,6 +41,7 @@ const DEMO_FREELANCER = {
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     bio: 'Freelance Commercial Cinematographer & Director. Crafting high-aesthetic ad films and visual campaigns.',
 };
+
 export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [isLoadingAuth, setIsLoadingAuth] = useState(true);
@@ -43,7 +49,8 @@ export const AuthProvider = ({ children }) => {
     const [enquiries, setEnquiries] = useState(INITIAL_ENQUIRIES);
     const [productionHouses, setProductionHouses] = useState(MOCK_PRODUCTION_HOUSES);
     const [toast, setToast] = useState(null);
-    // Initialize from localStorage if client-side
+
+    // Initialize from localStorage and sync with Express MySQL backend
     useEffect(() => {
         try {
             const savedUser = localStorage.getItem('adhoc_user');
@@ -82,68 +89,158 @@ export const AuthProvider = ({ children }) => {
             const savedHouses = localStorage.getItem('adhoc_production_houses');
             if (savedHouses) {
                 const parsed = JSON.parse(savedHouses);
-                // Merge initial mock houses with saved houses so new mock studios (e.g. local indie studios) are always available
-                const existingIds = new Set(parsed.map((h) => h.id));
-                const merged = [...parsed, ...MOCK_PRODUCTION_HOUSES.filter((h) => !existingIds.has(h.id))];
-                setProductionHouses(merged);
+                const merged = parsed.map((saved) => {
+                    const mock = MOCK_PRODUCTION_HOUSES.find((m) => m.id === saved.id);
+                    if (!mock) return saved;
+                    const updatedPortfolio = (saved.portfolio || []).map((p) => {
+                        const mockP = (mock.portfolio || []).find((mp) => mp.id === p.id);
+                        return mockP && mockP.videoUrl ? { ...p, videoUrl: mockP.videoUrl } : p;
+                    });
+                    return { ...saved, portfolio: updatedPortfolio };
+                });
+                const existingIds = new Set(merged.map((h) => h.id));
+                const finalHouses = [...merged, ...MOCK_PRODUCTION_HOUSES.filter((h) => !existingIds.has(h.id))];
+                setProductionHouses(finalHouses);
             }
-        }
-        catch {
-            // Fallback to default in-memory state
-        }
-        finally {
+        } catch {
+            // Local fallback
+        } finally {
             setIsLoadingAuth(false);
         }
+
+        // Asynchronously sync with MySQL API
+        const syncBackendData = async () => {
+            try {
+                // 1. Fetch live production houses from MySQL
+                const houseRes = await api.productionHouses.getAll();
+                if (houseRes.productionHouses && houseRes.productionHouses.length > 0) {
+                    setProductionHouses(houseRes.productionHouses);
+                    localStorage.setItem('adhoc_production_houses', JSON.stringify(houseRes.productionHouses));
+                }
+
+                // 2. Fetch authenticated user profile & data if token is active
+                const token = typeof window !== 'undefined' ? localStorage.getItem('adhoc_token') : null;
+                if (token) {
+                    try {
+                        const meRes = await api.auth.getMe();
+                        if (meRes.user) {
+                            setUser(meRes.user);
+                            localStorage.setItem('adhoc_user', JSON.stringify(meRes.user));
+
+                            const [enqRes, savedRes] = await Promise.all([
+                                api.enquiries.getAll().catch(() => ({ enquiries: null })),
+                                api.savedHouses.getSaved().catch(() => ({ savedHouseIds: null })),
+                            ]);
+
+                            if (enqRes.enquiries) {
+                                setEnquiries(enqRes.enquiries);
+                                localStorage.setItem('adhoc_enquiries', JSON.stringify(enqRes.enquiries));
+                            }
+                            if (savedRes.savedHouseIds) {
+                                setSavedHouseIds(savedRes.savedHouseIds);
+                                localStorage.setItem('adhoc_saved_houses', JSON.stringify(savedRes.savedHouseIds));
+                            }
+                        }
+                    } catch {
+                        // Token expired or invalid
+                    }
+                }
+            } catch {
+                // Backend offline or local fallback
+            }
+        };
+
+        syncBackendData();
     }, []);
+
     const showToast = (message, type = 'success') => {
         setToast({ message, type });
         setTimeout(() => {
             setToast(null);
         }, 4000);
     };
-    const login = async (email, role, name, category) => {
+
+    const login = async (email, role, name, category, password) => {
+        // Attempt MySQL Backend API login if password provided
+        if (password) {
+            try {
+                const apiRes = await api.auth.login(email, password);
+                if (apiRes.user) {
+                    setUser(apiRes.user);
+                    localStorage.setItem('adhoc_user', JSON.stringify(apiRes.user));
+
+                    // Fetch real user enquiries & saved houses from MySQL
+                    try {
+                        const [enqRes, savedRes] = await Promise.all([
+                            api.enquiries.getAll().catch(() => ({ enquiries: null })),
+                            api.savedHouses.getSaved().catch(() => ({ savedHouseIds: null })),
+                        ]);
+                        if (enqRes.enquiries) {
+                            setEnquiries(enqRes.enquiries);
+                            localStorage.setItem('adhoc_enquiries', JSON.stringify(enqRes.enquiries));
+                        }
+                        if (savedRes.savedHouseIds) {
+                            setSavedHouseIds(savedRes.savedHouseIds);
+                            localStorage.setItem('adhoc_saved_houses', JSON.stringify(savedRes.savedHouseIds));
+                        }
+                    } catch {}
+
+                    showToast(`Welcome back, ${apiRes.user.name}! Connected to MySQL database.`);
+                    return true;
+                }
+            } catch (apiErr) {
+                // If it was a network error (backend offline), we continue to local login
+                if (apiErr?.message && !apiErr.message.includes('fetch') && !apiErr.message.includes('Network') && !apiErr.message.includes('Failed to fetch')) {
+                    throw new Error(apiErr?.message || 'Invalid email or Password');
+                }
+            }
+        }
+
         let assignedId = `cust-${Date.now()}`;
         let company = 'Creative Client Co.';
         let userName = name || (email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1));
         let userCategory = category || 'business';
 
-        try {
-            const savedUsers = localStorage.getItem('adhoc_registered_users');
-            const registeredList = savedUsers ? JSON.parse(savedUsers) : [];
-            const registeredUser = registeredList.find((u) => u.email?.toLowerCase() === email.toLowerCase());
-            if (registeredUser) {
-                assignedId = registeredUser.id;
-                company = registeredUser.companyName;
-                userName = registeredUser.name;
-                if (registeredUser.category) {
-                    userCategory = registeredUser.category;
-                }
-            }
-        } catch {
-            // fallback
-        }
-
-        if (role === 'production_house') {
-            // Check if demo freelancer or demo studio
-            if (email.toLowerCase() === DEMO_FREELANCER.email.toLowerCase()) {
-                assignedId = DEMO_FREELANCER.id;
-                company = DEMO_FREELANCER.companyName;
-                userName = DEMO_FREELANCER.name;
-                userCategory = 'freelancer';
-            } else if (email.toLowerCase() === DEMO_PRODUCTION_HOUSE.email.toLowerCase()) {
-                assignedId = DEMO_PRODUCTION_HOUSE.id;
-                company = DEMO_PRODUCTION_HOUSE.companyName;
-                userName = DEMO_PRODUCTION_HOUSE.name;
-                userCategory = 'business';
-            } else {
-                // Check if there is an existing studio associated with this email
-                const existingStudio = productionHouses.find((h) => h.contactEmail?.toLowerCase() === email.toLowerCase());
-                if (existingStudio) {
-                    assignedId = existingStudio.id;
-                    company = existingStudio.name;
-                    if (existingStudio.category) {
-                        userCategory = existingStudio.category;
+        // Check against known demo accounts
+        if (email.toLowerCase() === DEMO_CUSTOMER.email.toLowerCase()) {
+            assignedId = DEMO_CUSTOMER.id;
+            company = DEMO_CUSTOMER.companyName;
+            userName = DEMO_CUSTOMER.name;
+        } else if (email.toLowerCase() === DEMO_PRODUCTION_HOUSE.email.toLowerCase()) {
+            assignedId = DEMO_PRODUCTION_HOUSE.id;
+            company = DEMO_PRODUCTION_HOUSE.companyName;
+            userName = DEMO_PRODUCTION_HOUSE.name;
+            userCategory = 'business';
+        } else if (email.toLowerCase() === DEMO_FREELANCER.email.toLowerCase()) {
+            assignedId = DEMO_FREELANCER.id;
+            company = DEMO_FREELANCER.companyName;
+            userName = DEMO_FREELANCER.name;
+            userCategory = 'freelancer';
+        } else {
+            // Check if user was previously registered in local storage
+            try {
+                const savedUsers = localStorage.getItem('adhoc_registered_users');
+                if (savedUsers) {
+                    const list = JSON.parse(savedUsers);
+                    const found = list.find((u) => u.email?.toLowerCase() === email.toLowerCase());
+                    if (found) {
+                        assignedId = found.id;
+                        company = found.companyName || company;
+                        userName = found.name || userName;
+                        userCategory = found.category || userCategory;
                     }
+                }
+            } catch {
+                // Ignore storage parse issues
+            }
+
+            if (role === 'production_house') {
+                const matchingHouse = productionHouses.find((h) => h.contactEmail?.toLowerCase() === email.toLowerCase());
+                if (matchingHouse) {
+                    assignedId = matchingHouse.id;
+                    company = matchingHouse.name;
+                    userName = matchingHouse.name;
+                    userCategory = matchingHouse.category || userCategory;
                 } else {
                     assignedId = assignedId.startsWith('ph-') ? assignedId : `ph-${Date.now()}`;
                     company = company || (userCategory === 'freelancer' ? `${userName}` : 'Studio Bombay Films');
@@ -242,13 +339,42 @@ export const AuthProvider = ({ children }) => {
         showToast(`Welcome back, ${newUser.name}! Logged in as ${roleLabel}.`);
         return true;
     };
-    const loginAsDemo = (demoRole) => {
+
+    const loginAsDemo = async (demoRole) => {
+        let email = 'sarah@aurorabev.in';
         let targetUser = DEMO_CUSTOMER;
         if (demoRole === 'freelancer') {
+            email = 'aman.freelance@adhoc.in';
             targetUser = DEMO_FREELANCER;
         } else if (demoRole === 'production_house') {
+            email = 'production@studiobombayfilms.in';
             targetUser = DEMO_PRODUCTION_HOUSE;
         }
+
+        try {
+            const apiRes = await api.auth.login(email, 'password123');
+            if (apiRes.user) {
+                setUser(apiRes.user);
+                localStorage.setItem('adhoc_user', JSON.stringify(apiRes.user));
+                try {
+                    const [enqRes, savedRes] = await Promise.all([
+                        api.enquiries.getAll().catch(() => ({ enquiries: null })),
+                        api.savedHouses.getSaved().catch(() => ({ savedHouseIds: null })),
+                    ]);
+                    if (enqRes.enquiries) {
+                        setEnquiries(enqRes.enquiries);
+                        localStorage.setItem('adhoc_enquiries', JSON.stringify(enqRes.enquiries));
+                    }
+                    if (savedRes.savedHouseIds) {
+                        setSavedHouseIds(savedRes.savedHouseIds);
+                        localStorage.setItem('adhoc_saved_houses', JSON.stringify(savedRes.savedHouseIds));
+                    }
+                } catch {}
+                showToast(`Switched demo account: Logged in as ${apiRes.user.name} (Live MySQL session active)`);
+                return;
+            }
+        } catch {}
+
         setUser(targetUser);
         localStorage.setItem('adhoc_user', JSON.stringify(targetUser));
         const roleLabel = targetUser.category === 'freelancer'
@@ -258,13 +384,48 @@ export const AuthProvider = ({ children }) => {
                 : 'Production House Business';
         showToast(`Switched demo account: Logged in as ${targetUser.name} (${roleLabel})`);
     };
-    const signup = async (email, name, role, companyName, location, category = 'business') => {
+
+    const signup = async (email, name, role, companyName, location, category = 'business', password, profilePic = '') => {
+        // Attempt MySQL Backend API register
+        try {
+            const pwd = password || 'Password@123';
+            const apiRes = await api.auth.register({
+                email,
+                name,
+                password: pwd,
+                role,
+                category,
+                companyName: companyName || name,
+                location,
+            });
+
+            if (apiRes.user && role === 'production_house') {
+                await api.productionHouses.create({
+                    name: companyName || (category === 'freelancer' ? name : `${name} Studios`),
+                    location: location || 'Mumbai, India',
+                    city: location ? location.split(',')[0].trim() : 'Mumbai',
+                    category,
+                    contactEmail: email,
+                }).catch(() => {});
+            }
+        } catch (apiErr) {
+            console.warn('Backend API signup fallback:', apiErr.message);
+        }
+
         if (role === 'production_house') {
             const studioId = `ph-${Date.now()}`;
             const isFreelancer = category === 'freelancer';
             const studioName = companyName || (isFreelancer ? name : `${name} Studios`);
             const studioCity = location ? location.split(',')[0].trim() : 'Mumbai';
             const studioLocation = location || `${studioCity}, India`;
+
+            const defaultLogo = isFreelancer
+                ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80';
+
+            const defaultAvatar = isFreelancer
+                ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
+                : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80';
 
             const newStudio = {
                 id: studioId,
@@ -276,9 +437,7 @@ export const AuthProvider = ({ children }) => {
                 description: isFreelancer
                     ? `Independent creator and freelancer based in ${studioLocation}. Founded by ${name}. Direct marketplace access without documentation requirements.`
                     : `Independent creative studio based in ${studioLocation}. Founded by ${name}. We craft commercial films, branded video, and social campaigns. Document verification (GST or Udyam Certificate) is required to operate.`,
-                logoUrl: isFreelancer
-                    ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=160&auto=format&fit=crop&q=80'
-                    : 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=160&auto=format&fit=crop&q=80',
+                logoUrl: profilePic || defaultLogo,
                 coverImageUrl: 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1400&auto=format&fit=crop&q=80',
                 location: studioLocation,
                 city: studioCity,
@@ -367,9 +526,7 @@ export const AuthProvider = ({ children }) => {
                 category: isFreelancer ? 'freelancer' : 'business',
                 companyName: studioName,
                 createdAt: new Date().toISOString(),
-                avatarUrl: isFreelancer
-                    ? 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80'
-                    : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+                avatarUrl: profilePic || defaultAvatar,
             };
 
             setProductionHouses((prev) => {
@@ -416,12 +573,17 @@ export const AuthProvider = ({ children }) => {
         showToast(`Account successfully created for ${name}! Please log in.`, 'success');
         return true;
     };
+
     const logout = () => {
+        api.auth.logout();
         setUser(null);
         localStorage.removeItem('adhoc_user');
+        localStorage.removeItem('adhoc_token');
         showToast('You have been logged out.');
     };
+
     const toggleSaveHouse = (houseId) => {
+        api.savedHouses.toggle(houseId).catch(() => {});
         setSavedHouseIds((prev) => {
             const isSaved = prev.includes(houseId);
             const updated = isSaved ? prev.filter((id) => id !== houseId) : [...prev, houseId];
@@ -433,8 +595,22 @@ export const AuthProvider = ({ children }) => {
             return updated;
         });
     };
+
     const isHouseSaved = (houseId) => savedHouseIds.includes(houseId);
+
     const addEnquiry = (newEnquiryData) => {
+        // Sync to MySQL API in background
+        api.enquiries.create({
+            productionHouseId: newEnquiryData.productionHouseId,
+            serviceId: newEnquiryData.serviceId,
+            projectTitle: newEnquiryData.projectTitle,
+            category: newEnquiryData.category,
+            budgetRange: newEnquiryData.budgetRange,
+            deadline: newEnquiryData.deadline,
+            description: newEnquiryData.description,
+            initialMessage: newEnquiryData.description,
+        }).catch(() => {});
+
         const initialMsg = {
             id: `msg-${Date.now()}`,
             senderId: newEnquiryData.customerId || 'cust-1',
@@ -461,8 +637,13 @@ export const AuthProvider = ({ children }) => {
         showToast(`Enquiry "${created.projectTitle}" successfully sent to ${created.productionHouseName}!`);
         return created;
     };
+
     const sendEnquiryMessage = (enquiryId, content, attachment) => {
         if (!content?.trim() && !attachment) return null;
+
+        if (content?.trim()) {
+            api.enquiries.addMessage(enquiryId, content.trim()).catch(() => {});
+        }
 
         let sentMessage = null;
         let targetEnquiry = null;
@@ -549,7 +730,9 @@ export const AuthProvider = ({ children }) => {
 
         return sentMessage;
     };
+
     const updateEnquiryStatus = (enquiryId, status, quoteAmount, quoteNotes) => {
+        api.enquiries.updateStatus(enquiryId, status, quoteAmount).catch(() => {});
         setEnquiries((prev) => {
             const updated = prev.map((enq) => {
                 if (enq.id === enquiryId) {
@@ -576,6 +759,7 @@ export const AuthProvider = ({ children }) => {
         };
         showToast(`Enquiry ${statusLabels[status]}.`);
     };
+
     const deleteEnquiry = (enquiryId) => {
         let deletedTitle = '';
         setEnquiries((prev) => {
@@ -587,14 +771,27 @@ export const AuthProvider = ({ children }) => {
         });
         showToast(`Enquiry "${deletedTitle}" deleted.`);
     };
+
     const updateProductionHouse = (houseId, updates) => {
         setProductionHouses((prev) => {
             const updated = prev.map((h) => (h.id === houseId ? { ...h, ...updates } : h));
             localStorage.setItem('adhoc_production_houses', JSON.stringify(updated));
             return updated;
         });
+        if (updates.logoUrl !== undefined) {
+            setUser((prev) => {
+                if (!prev) return prev;
+                if (prev.productionHouseId === houseId || prev.id === houseId) {
+                    const updatedUser = { ...prev, avatarUrl: updates.logoUrl };
+                    localStorage.setItem('adhoc_user', JSON.stringify(updatedUser));
+                    return updatedUser;
+                }
+                return prev;
+            });
+        }
         showToast('Production House profile updated successfully.');
     };
+
     const addPortfolioItem = (houseId, item) => {
         const newItem = {
             ...item,
@@ -615,6 +812,7 @@ export const AuthProvider = ({ children }) => {
         });
         showToast(`Added "${newItem.title}" to portfolio!`);
     };
+
     const deletePortfolioItem = (houseId, itemId) => {
         setProductionHouses((prev) => {
             const updated = prev.map((h) => {
@@ -631,7 +829,19 @@ export const AuthProvider = ({ children }) => {
         });
         showToast('Portfolio item removed.');
     };
+
     const verifyStudioDocuments = (houseId, documentData) => {
+        api.verification.submit({
+            productionHouseId: houseId,
+            docType: documentData.docType || 'gst',
+            docNumber: documentData.docNumber,
+            legalName: documentData.legalName,
+            signatoryName: documentData.signatoryName,
+            panNumber: documentData.panNumber,
+            fileName: documentData.fileName,
+            fileSize: documentData.fileSize,
+        }).catch(() => {});
+
         let verifiedName = '';
         setProductionHouses((prev) => {
             const updated = prev.map((h) => {
@@ -729,6 +939,7 @@ export const AuthProvider = ({ children }) => {
         });
         showToast(isNowVerified ? 'Studio verified genuine! All features unlocked.' : 'Studio unverified. Actions are locked until verified.', isNowVerified ? 'success' : 'error');
     };
+
     const requestVerification = (houseId, details = {}) => {
         setProductionHouses((prev) => {
             const updated = prev.map((h) => {
@@ -748,6 +959,7 @@ export const AuthProvider = ({ children }) => {
         });
         showToast('Verification details recorded! Verified badge active.');
     };
+
     const addService = (houseId, service) => {
         const newService = {
             ...service,
@@ -768,6 +980,7 @@ export const AuthProvider = ({ children }) => {
         });
         showToast(`Added "${newService.name}" to services!`);
     };
+
     const deleteService = (houseId, serviceId) => {
         setProductionHouses((prev) => {
             const updated = prev.map((h) => {
@@ -784,7 +997,9 @@ export const AuthProvider = ({ children }) => {
         });
         showToast('Service removed.');
     };
-    return (<AuthContext.Provider value={{
+
+    return (
+        <AuthContext.Provider value={{
             user,
             role: user?.role || null,
             isAuthenticated: Boolean(user),
@@ -814,17 +1029,23 @@ export const AuthProvider = ({ children }) => {
             toast,
             showToast,
         }}>
-      {children}
-      {toast && (<div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-soft-lg bg-white border border-[#DCE8F5] text-[#172B4D] animate-in fade-in slide-in-from-bottom-4 duration-300">
-          <div className={`w-2.5 h-2.5 rounded-full ${toast.type === 'success'
-                ? 'bg-emerald-500'
-                : toast.type === 'error'
-                    ? 'bg-rose-500'
-                    : 'bg-[#5B9DF9]'}`}/>
-          <span className="text-sm font-medium">{toast.message}</span>
-        </div>)}
-    </AuthContext.Provider>);
+            {children}
+            {toast && (
+                <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-soft-lg bg-white border border-[#DCE8F5] text-[#172B4D] animate-in fade-in slide-in-from-bottom-4 duration-300">
+                    <div className={`w-2.5 h-2.5 rounded-full ${
+                        toast.type === 'success'
+                            ? 'bg-emerald-500'
+                            : toast.type === 'error'
+                                ? 'bg-rose-500'
+                                : 'bg-[#5B9DF9]'
+                    }`} />
+                    <span className="text-sm font-medium">{toast.message}</span>
+                </div>
+            )}
+        </AuthContext.Provider>
+    );
 };
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {

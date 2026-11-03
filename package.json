@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "server": "npm run dev --prefix server",
+    "server:init": "npm run db:init --prefix server",
+    "server:seed": "npm run db:seed --prefix server"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",

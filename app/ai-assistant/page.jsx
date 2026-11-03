@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
+import { Avatar } from '@/components/ui/Avatar';
 import { Bot, Send, Sparkles, CheckCircle2, Copy, RefreshCw, FileText, User, ShieldCheck } from 'lucide-react';
 const INITIAL_MESSAGES = [
     {
@@ -308,7 +309,7 @@ ${brief.deliverables.map((d) => `- ${d}`).join('\n')}
                             return null;
                         return (<div key={house.id} className="p-3 rounded-xl bg-white border border-zinc-200 shadow-2xs space-y-2 flex flex-col justify-between">
                                 <div className="flex items-center gap-2.5">
-                                  <img src={house.logoUrl} alt={house.name} className="w-9 h-9 rounded-lg object-cover border border-zinc-200 bg-white shrink-0"/>
+                                  <Avatar src={house.logoUrl} name={house.name} className="w-9 h-9 rounded-lg text-sm shrink-0"/>
                                   <div className="min-w-0">
                                     <h4 className="text-xs font-bold text-zinc-900 truncate">
                                       {house.name}

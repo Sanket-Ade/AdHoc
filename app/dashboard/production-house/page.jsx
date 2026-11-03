@@ -1,11 +1,12 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 import { EnquiryStatusBadge } from '@/components/ui/Badge';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
+import { Avatar } from '@/components/ui/Avatar';
 import { formatINR } from '@/lib/format';
 import {
   Building2,
@@ -35,6 +36,7 @@ import {
   FileText,
   AlertTriangle,
   RotateCcw,
+  Camera,
 } from 'lucide-react';
 import { EnquiryChatModal } from '@/components/EnquiryChatModal';
 
@@ -84,6 +86,7 @@ export default function ProductionHouseDashboardPage() {
   const [newImageUrl, setNewImageUrl] = useState(
     'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=800&auto=format&fit=crop&q=80'
   );
+  const [newVideoUrl, setNewVideoUrl] = useState('');
   const [newDescription, setNewDescription] = useState('');
   const [newMetrics, setNewMetrics] = useState('');
 
@@ -97,6 +100,7 @@ export default function ProductionHouseDashboardPage() {
 
   // Profile Settings Form State
   const [studioName, setStudioName] = useState(studio?.name || '');
+  const [studioLogoUrl, setStudioLogoUrl] = useState(studio?.logoUrl || '');
   const [studioTagline, setStudioTagline] = useState(studio?.tagline || '');
   const [studioDescription, setStudioDescription] = useState(studio?.description || '');
   const [studioLocation, setStudioLocation] = useState(studio?.location || '');
@@ -116,6 +120,29 @@ export default function ProductionHouseDashboardPage() {
       : studio?.equipment || ''
   );
 
+  const headerFileInputRef = useRef(null);
+  const settingsFileInputRef = useRef(null);
+
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Image file too large. Please select an image under 5MB.', 'error');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result;
+      if (typeof dataUrl === 'string') {
+        setStudioLogoUrl(dataUrl);
+        updateProductionHouse(studio.id, { logoUrl: dataUrl });
+        showToast('Profile picture updated successfully!', 'success');
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   // Document Verification Form State
   const [docType, setDocType] = useState('gst'); // 'gst' | 'udyam'
   const [docNumber, setDocNumber] = useState('');
@@ -131,6 +158,7 @@ export default function ProductionHouseDashboardPage() {
   useEffect(() => {
     if (studio) {
       setStudioName(studio.name || '');
+      setStudioLogoUrl(studio.logoUrl || '');
       setStudioTagline(studio.tagline || '');
       setStudioDescription(studio.description || '');
       setStudioLocation(studio.location || '');
@@ -326,6 +354,7 @@ export default function ProductionHouseDashboardPage() {
       clientName: newClient || 'Client Showcase',
       category: newCategory,
       thumbnailUrl: newImageUrl,
+      videoUrl: newVideoUrl || undefined,
       description: newDescription || 'Commercial film portfolio showcase.',
       metrics: newMetrics || undefined,
       year: 2026,
@@ -333,6 +362,7 @@ export default function ProductionHouseDashboardPage() {
     setAddPortfolioModalOpen(false);
     setNewTitle('');
     setNewClient('');
+    setNewVideoUrl('');
     setNewDescription('');
     setNewMetrics('');
   };
@@ -375,6 +405,7 @@ export default function ProductionHouseDashboardPage() {
 
     updateProductionHouse(studio.id, {
       name: studioName,
+      logoUrl: studioLogoUrl,
       tagline: studioTagline,
       description: studioDescription,
       equipmentFacilities: equipmentList,
@@ -395,11 +426,29 @@ export default function ProductionHouseDashboardPage() {
         {/* Welcome Section */}
         <div className="bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/90 shadow-soft flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <img
-              src={studio.logoUrl}
-              alt={studio.name}
-              className="w-16 h-16 rounded-2xl object-cover border border-zinc-200 bg-zinc-50 shrink-0"
-            />
+            <div className="relative group shrink-0">
+              <Avatar
+                src={studio.logoUrl}
+                name={studio.name}
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl text-2xl sm:text-3xl shadow-xs"
+              />
+              <button
+                type="button"
+                onClick={() => headerFileInputRef.current?.click()}
+                className="absolute inset-0 rounded-2xl bg-black/60 text-white opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-0.5 cursor-pointer backdrop-blur-[2px]"
+                title="Upload Profile Picture"
+              >
+                <Camera className="w-5 h-5 text-yellow-300" />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Change</span>
+              </button>
+              <input
+                ref={headerFileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </div>
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-zinc-900">
@@ -1161,6 +1210,12 @@ export default function ProductionHouseDashboardPage() {
                 >
                   <div className="relative h-48 w-full bg-zinc-100">
                     <img src={item.thumbnailUrl} alt={item.title} className="w-full h-full object-cover" />
+                    {item.videoUrl && (
+                      <div className="absolute bottom-2.5 left-2.5 z-10 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-semibold shadow-xs">
+                        <Video className="w-3 h-3 text-amber-400" />
+                        <span>Video Linked</span>
+                      </div>
+                    )}
                     <div className="absolute top-2.5 right-2.5">
                       <button
                         disabled={!isStudioVerified}
@@ -1301,6 +1356,59 @@ export default function ProductionHouseDashboardPage() {
             )}
 
             <form onSubmit={handleSaveSettings} className="space-y-4">
+              {/* Profile Picture / Logo Section */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-zinc-200/90 bg-zinc-50/70 space-y-3">
+                <label className="text-xs sm:text-sm font-bold text-zinc-800 tracking-wide block">
+                  Studio Profile Picture / Logo
+                </label>
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <Avatar
+                    src={studioLogoUrl || studio.logoUrl}
+                    name={studioName || studio.name}
+                    className="w-20 h-20 rounded-2xl text-3xl shadow-xs shrink-0"
+                  />
+                  <div className="space-y-2 text-center sm:text-left flex-1">
+                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        leftIcon={<Camera className="w-4 h-4 text-amber-700" />}
+                        onClick={() => settingsFileInputRef.current?.click()}
+                        className="text-xs font-semibold"
+                      >
+                        Upload Picture
+                      </Button>
+                      {(studioLogoUrl || studio.logoUrl) && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setStudioLogoUrl('');
+                            updateProductionHouse(studio.id, { logoUrl: '' });
+                            showToast('Profile photo removed. First letter will be used.', 'info');
+                          }}
+                          className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-semibold"
+                        >
+                          Remove Photo
+                        </Button>
+                      )}
+                      <input
+                        ref={settingsFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        className="hidden"
+                      />
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-zinc-500 leading-relaxed">
+                      JPG, PNG, or WEBP (Max 5MB). If no photo is uploaded, your studio name&apos;s first letter ({((studioName || studio.name)?.trim()?.charAt(0) || 'P').toUpperCase()}) will be displayed as your profile picture.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <Input
                 label="Studio / Production House Name"
                 value={studioName}
@@ -1520,6 +1628,13 @@ export default function ProductionHouseDashboardPage() {
               label="Thumbnail Image URL"
               value={newImageUrl}
               onChange={(e) => setNewImageUrl(e.target.value)}
+            />
+
+            <Input
+              label="Video Stream URL (Cloudinary or YouTube)"
+              placeholder="e.g. https://res.cloudinary.com/.../video.mp4"
+              value={newVideoUrl}
+              onChange={(e) => setNewVideoUrl(e.target.value)}
             />
 
             <div className="flex flex-col gap-1.5 text-left">

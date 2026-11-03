@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { SendEnquiryModal } from '@/components/SendEnquiryModal';
+import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { POPULAR_CATEGORIES } from '@/lib/mock-data';
 import { formatINR } from '@/lib/format';
@@ -287,10 +288,10 @@ export default function HomePage() {
 
                       {/* Studio Identity Overlaid */}
                       <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2.5">
-                        <img
+                        <Avatar
                           src={house.logoUrl}
-                          alt={house.name}
-                          className="w-10 h-10 rounded-xl object-cover border border-white/40 shadow-xs bg-white shrink-0"
+                          name={house.name}
+                          className="w-10 h-10 rounded-xl text-base shadow-xs shrink-0"
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
